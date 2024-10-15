@@ -1,1 +1,1 @@
-{'server_ip':'127.0.0.1','server_port':8989,'dbUrl':'localhost','dbPort':3306,'dbUser':'root','dbPwd':'123456','dbName':'111'}
+{'server_ip':'172.17.169.26','server_port':8989,'dbUrl':'localhost','dbPort':3306,'dbUser':'root','dbPwd':'123456','dbName':'database'}
