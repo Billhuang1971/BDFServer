@@ -7117,14 +7117,20 @@ class server(socketServer):
             algorithm_info = self.dbUtil.getAlgorithmInfo(where_name='type', where_value=REQmsg[3][2])
             ui_size = len(algorithm_info)
             ptotal = ceil(ui_size / _pagerows)  # 总页数
-            if _curPageIndex > ptotal:
-                _curPageIndex = ptotal
-            result = self.dbUtil.getalgorithmInfoByPage(where_name='type', where_value=REQmsg[3][2],
-                                                        offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
-            msgtip = [REQmsg[1], f"获取全部算法信息", '', '']
-            # print(msgtip)
-            ret = ['1', REQmsg[1], result, ptotal]
-            return msgtip, ret
+            if ptotal != 0:
+                if _curPageIndex > ptotal:
+                    _curPageIndex = ptotal
+                result = self.dbUtil.getalgorithmInfoByPage(where_name='type', where_value=REQmsg[3][2],
+                                                            offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
+                msgtip = [REQmsg[1], f"获取全部算法信息", '', '']
+                # print(msgtip)
+                ret = ['1', REQmsg[1], result, ptotal]
+                return msgtip, ret
+            else:
+                result = 0
+                msgtip = [REQmsg[0], f"无算法信息", '', '']
+                ret = ['2', REQmsg[0], result, ptotal]
+                return msgtip, ret
         except Exception as e:
             print('getAlgorithmInfo', e)
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', "", '']
