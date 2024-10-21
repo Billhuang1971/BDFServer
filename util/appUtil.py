@@ -433,12 +433,8 @@ class appUtil():
                 print(f"An error occurred: {e}")
                 return False
 
-
-
-
-
     # 按字节读取文件
-    def readFile(self, file_path, block_size, block_id):
+    def readByte(self, file_path, block_size, block_id):
         try:
             print(f'readFile file_path: {file_path}, block_size:{block_size}, block_id: {block_id}')
             with open(file_path, 'rb') as f:
@@ -450,6 +446,14 @@ class appUtil():
         except Exception as e:
             print('readFile', e)
         return data
+
+    # 写文件功能
+    def writeByte(self, savePath, data):
+        try:
+            with open(savePath, 'ab') as f:
+                f.write(data)
+        except Exception as e:
+            print('writeByte', e)
 
     # 获取文件的默认导联
     def getDefChannels(self, path):
@@ -491,16 +495,17 @@ class appUtil():
                 for channel in channel_set:
                     ch1, ch2 = channel.split('-')
                     print(f'channel: {channel}, ch1: {ch1}, ch2: {ch2}')
-                    raw = mne.set_bipolar_reference(raw, anode=ch1, cathode=ch2, ch_name=f'{channel}', drop_refs=False)
+                    raw = mne.set_bipolar_reference(raw, anode=ch1, cathode=ch2, ch_name=f'{channel}',
+                                                    drop_refs=False)
 
                 raw.load_data()
                 raw.drop_channels(new_channel_names)
 
             print(f'channel_names2: {raw.ch_names}')
-            data = raw.get_data()
+            # data = raw.get_data()
             # 打印数据形状
-            print("Data shape:", data.shape)
-            return data
+            # print("Data shape:", data.shape)
+            return raw
         except Exception as e:
             print('getEEGData', e)
             return []

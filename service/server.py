@@ -5866,7 +5866,7 @@ class server(socketServer):
             #     thread.start()
 
             blockSize = 1024 * 1024  # 1M
-            data = self.appUtil.readFile(file_path=REQmsg[1], block_size=blockSize,
+            data = self.appUtil.readByte(file_path=REQmsg[1], block_size=blockSize,
                                          block_id=int(REQmsg[2].split('=')[1]))
             result = [f'{REQmsg[2]}', data]
             msgtip = [cmdID, f"返回{REQmsg[2]}数据", '', '']
@@ -5936,6 +5936,16 @@ class server(socketServer):
             if hasattr(self, 'setBuildService') and self.setBuildService is not None:
                 msgtip = [cmdID, f"当前有其他用户正在构建数据集，请稍等", '', '']
                 ret = ['0', cmdID, f"当前有其他用户正在构建数据集，请稍等", ["当前有其他用户正在构建数据集，请稍等"]]
+                return msgtip, ret
+
+            # 判断集合名称是否重复
+            setInfo = self.dbUtil.getSetBuildInfo(selColumn="set_name", after='set_info')
+            print(f'setInfo: {setInfo}')
+            setInfo = [info[0] for info in setInfo]
+            if REQmsg[0] in setInfo:
+                msgtip = [cmdID, f"当前数据集名重复，请重新命名", '', '']
+                ret = ['0', cmdID, f"当前数据集名重复，请重新命名", ["当前数据集名重复，请重新命名"]]
+                return msgtip, ret
 
             data = json.loads(REQmsg[1])
 
@@ -5974,6 +5984,8 @@ class server(socketServer):
                 else:
                     progress = self.setBuildService.getProgress()
                     ret = ['1', cmdID, f"构建数据集ing", ['building', progress]]
+                    if progress == 100:
+                        self.setBuildService = None
                 return msgtip, ret
             else:
                 print(f'线程为None')
