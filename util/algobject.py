@@ -424,8 +424,8 @@ class testAlg(algObject):
             self.classifierName = classifier_info[1]
             self.readAlgFile(classifier_info[2])
             self.readTestingSet(classifier_info[3])
-            my_path = os.path.join(os.path.dirname(__file__))[:-16]
-            self.modelFileName = os.path.join(my_path, 'server_root\\', 'classifier\\', 'models\\', classifier_info[4])
+            my_path = os.path.join(os.path.dirname(__file__))[:-15]
+            self.modelFileName = os.path.join(my_path, 'BDFServer\\', 'classifier\\', 'models\\', classifier_info[4])
         except Exception as e:
             print('testAlg__init__:', e)
 
@@ -449,8 +449,8 @@ class testAlg(algObject):
             alg_name = alg_info[7]
             self.algPara = alg_info[8]
             self.algType = alg_info[17]
-            path = os.path.join(os.path.dirname(__file__))[:-16]
-            self.algFileName = os.path.join(path, 'server_root\\', 'classifier\\', 'algorithms\\', alg_name + '.py')
+            path = os.path.join(os.path.dirname(__file__))[:-15]
+            self.algFileName = os.path.join(path, 'BDFServer\\', 'classifier\\', 'algorithms\\', alg_name + '.py')
         except Exception as e:
             print('readAlgFile', e)
 
@@ -501,8 +501,8 @@ class testAlg(algObject):
         try:
             set_info = self.dbUtil.get_set_info(where_name='set_id', where_value=set_id)[0]
             Filename = set_info[5] + '.npz'
-            path = os.path.join(os.path.dirname(__file__))[:-16]
-            self.testingSetFilename = os.path.join(path, 'server_root\\', 'data\\', 'test_set\\', Filename)
+            path = os.path.join(os.path.dirname(__file__))[:-15]
+            self.testingSetFilename = os.path.join(path, 'BDFServer\\', 'data\\', 'test_set\\', Filename)
         except Exception as e:
             print('readTestSet', e)
 

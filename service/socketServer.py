@@ -32,7 +32,7 @@ class socketServer(QObject):
         self.handle_mutex = threading.Lock()
     def sockServerStart(self):
         try:
-            self.sock = socket.socket()
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.bind((self.ip, self.port))
             self.sock.setblocking(False)
             self.sock.listen()
@@ -65,9 +65,10 @@ class socketServer(QObject):
             r_list, w_list, e_list = select.select(self.inputs, [], [])
             for event in r_list:
                 if event in e_list:
-                    print("客户端断开连接e_list")
                     addr = event.getpeername()
+                    print(f"客户端{addr}断开连接e_list")
                     self.inputs.remove(event)
+                    event.close()
                     continue
                 if event == self.sock:
                     new_sock, addresses = event.accept()
@@ -81,16 +82,20 @@ class socketServer(QObject):
                               self.trainSig.emit([event, data])
                           elif data[0] == 'auto' and data[1] == 7:
                               self.trainSig.emit([event, data])
+                          elif data[0] == 'modelTest' and data[1] == 2:
+                              self.trainSig.emit([event, data])
                           else:
                               self.executor.submit(self.handle_received_data, event, data)
                       else:
                           addr = event.getpeername()
                           print(f"客户端{addr}断开连接22")
                           self.inputs.remove(event)
+                          event.close()
                     except Exception as e:
                             addr = event.getpeername()
-                            print(f"e客户端{addr}断开连接11")
+                            print(f"e客户端{addr}断开连接11", e)
                             self.inputs.remove(event)
+                            event.close()
                             break
         except Exception as e:
             print(f"eserverTimer() err:{e}")
