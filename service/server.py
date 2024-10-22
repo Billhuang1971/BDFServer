@@ -4441,7 +4441,7 @@ class server(socketServer):
             pname = ''
             if qvalue is not None and qvalue != "":
                 if qname == "检查单号":
-                    where_sql = f" check_info.check_number like '%{qvalue}' "
+                    where_sql = f" check_info.check_number like '%{qvalue}%' "
                 elif qname == "病人姓名":
                     pname = qvalue
                 elif qname == "测量日期":
