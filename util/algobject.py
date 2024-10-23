@@ -349,7 +349,7 @@ class predictAlg(algObject):
         if "开始进行数据库存储" in stdout:
             self.progress.append("开始进行数据库存储")
             self.predict_dic = self.read_predict_result()
-            self.scan_num = self.predict_dic['scanned_num']
+            self.scan_num = self.predict_dic['scanned_num'] + self.scan_num
             self.total_scan_num = self.predict_dic['total_scan_num']
             self.save_predict_labels()
         if "result:" in stdout and "finished" in stdout:
