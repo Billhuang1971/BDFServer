@@ -923,6 +923,9 @@ class server(socketServer):
             elif cmd == 'setBuild' and cmdID == 10:
                 tipmsg, ret = self.getSetSearch(cmdID, REQmsg[3])
                 REQmsg[3] = ret
+            elif cmd == 'setBuild' and cmdID == 11:
+                tipmsg, ret = self.getSetDescribe(cmdID, REQmsg[3])
+                REQmsg[3] = ret
 
 
             # 模型管理
@@ -6023,6 +6026,22 @@ class server(socketServer):
             setInfo = self.dbUtil.getSetBuildInfo(after=f"set_info where set_name like '%{REQmsg[3]}%'")
             msgtip = [cmdID, f"获取集合信息", '', '']
             ret = ['1', cmdID, f"获取集合信息", [len(setInfo), setInfo[start:start + REQmsg[1]]]]
+            return msgtip, ret
+        except Exception as e:
+            print('getSetSearch', e)
+            msgtip = [cmdID, f"获取集合信息失败", '', '']
+            ret = ['0', cmdID, f"获取集合信息失败, e: {e}", ['获取搜索数据集失败']]
+            return msgtip, ret
+
+    # 获取数据集搜索的结果
+    def getSetDescribe(self, cmdID, REQmsg):
+        print(f'getSetDescribe REQmsg: {REQmsg}')
+        try:
+            trainInfoPath = f'data/train_set/{REQmsg[3]}.npz'
+            testInfoPath = f'data/test_set/{REQmsg[4]}.npz'
+            msgtip = [cmdID, f"获取数据集详细信息", '', '']
+            ret = ['1', cmdID, f"获取数据集详细信息", [self.appUtil.getSetLabelInfo(trainInfoPath),
+                                                       self.appUtil.getSetLabelInfo(testInfoPath)]]
             return msgtip, ret
         except Exception as e:
             print('getSetSearch', e)
