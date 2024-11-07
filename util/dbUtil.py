@@ -2721,7 +2721,30 @@ class dbUtil(MySqlService):
             return algorithm_info
         except Exception as e:
             print(e)
-
+    def Inqcls_set(self,where_type='',offset='',psize=''):
+        try:
+            if offset!='':
+                sql = f"select * from set_info where JSON_EXTRACT(description, '$.type') = '{where_type}'limit {offset}, {psize} "
+            else:
+                sql = f"select * from set_info where JSON_EXTRACT(description, '$.type') = '{where_type}'"
+            algorithm_info = self.myQuery(sql)
+            return algorithm_info
+        except Exception as e:
+            print(e)
+    def Inquiryset(self, where_name='', where_like='', where_type=''):
+        try:
+            sql = f"select * from set_info where {where_name} like '%{where_like}%' and JSON_EXTRACT(description, '$.type') = '{where_type}'"
+            algorithm_info = self.myQuery(sql)
+            return algorithm_info
+        except Exception as e:
+            print(e)
+    def getsetInfoByPage(self, where_type='', offset='', psize=''):
+        try:
+            sql = f"select * from set_info where JSON_EXTRACT(description, '$.type') = '{where_type}' limit {offset}, {psize}"
+            algorithm_info = self.myQuery(sql)
+            return algorithm_info
+        except Exception as e:
+            print(e)
 
     # 模型测试
     def getClassifierCount(self, classifier_name):
