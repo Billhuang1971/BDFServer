@@ -28,8 +28,8 @@ class algObject(object):
         self.scan_num = 0
         self.total_scan_num = 0
         self.current_file_label_saved_num = 0
-
-        self.readAlgFile(self.alg_id)
+        if self.alg_id is not None:
+            self.readAlgFile(self.alg_id)
 
     def run(self):
         pass
@@ -97,8 +97,8 @@ class trainAlg(algObject):
             self.readTrainingSet(set_id)
             self.train_performance = None
             self.sample_len = None
-            path = os.path.join(os.path.dirname(__file__))[:-16]
-            self.set_path = os.path.join(path, 'server_root\\', 'classifier\\', 'algorithms\\', 'set.pkl')
+            path = os.path.join(os.path.dirname(__file__))[:-15]
+            self.set_path = os.path.join(path, 'BDFServer\\', 'classifier\\', 'algorithms\\', 'set.pkl')
 
         except Exception as e:
             print('trainAlg__init__:', e)
@@ -111,8 +111,8 @@ class trainAlg(algObject):
         try:
             set_info = self.dbUtil.get_set_info(where_name='set_id', where_value=set_id)[0]
             Filename = set_info[4] + '.npz'
-            path = os.path.join(os.path.dirname(__file__))[:-16]
-            self.trainingSetFilename = os.path.join(path, 'server_root\\', 'data\\', 'train_set\\', Filename)
+            path = os.path.join(os.path.dirname(__file__))[:-15]
+            self.trainingSetFilename = os.path.join(path, 'BDFServer\\', 'data\\', 'train_set\\', Filename)
             self.setDescription = json.loads(set_info[3])
         except Exception as e:
             print('readTrainingSet', e)
@@ -141,8 +141,8 @@ class trainAlg(algObject):
                     return False
             set_info = {'set_temp': self.set_temp, 'set_class': self.set_class}
             self.save_set_info(set_info)
-            path = os.path.join(os.path.dirname(__file__))[:-16]
-            self.modelFileName = os.path.join(path, 'server_root\\', 'classifier\\', 'models\\',
+            path = os.path.join(os.path.dirname(__file__))[:-15]
+            self.modelFileName = os.path.join(path, 'BDFServer\\', 'classifier\\', 'models\\',
                                               self.algName + str(self.set_id) + '.pth')
             self.classifierName = self.algName + str(self.set_id)
             return True
@@ -227,8 +227,8 @@ class trainAlg(algObject):
         alg_name = alg_info[2]
         self.algPara = json.loads(alg_info[3])
         self.algType = alg_info[17]
-        path = os.path.join(os.path.dirname(__file__))[:-16]
-        self.algFileName = os.path.join(path, 'server_root\\', 'classifier\\', 'algorithms\\', alg_name + '.py')
+        path = os.path.join(os.path.dirname(__file__))[:-15]
+        self.algFileName = os.path.join(path, 'BDFServer\\', 'classifier\\', 'algorithms\\', alg_name + '.py')
 
     def get_classifier_sample_length(self, sampling_rate, set_info):
         try:
@@ -281,9 +281,9 @@ class predictAlg(algObject):
             self.sample_len = classifier_info[10]
             self.modelUnit = classifier_info[12]
             self.classifierName = classifier_info[1]
-            my_path = os.path.join(os.path.dirname(__file__))[:-16]
-            self.modelFileName = os.path.join(my_path, 'server_root\\', 'classifier\\', 'models\\', classifier_info[4])
-            self.scan_result_filepath = os.path.join(my_path, 'server_root\\', 'classifier\\', 'algorithms\\',
+            my_path = os.path.join(os.path.dirname(__file__))[:-15]
+            self.modelFileName = os.path.join(my_path, 'BDFServer\\', 'classifier\\', 'models\\', classifier_info[4])
+            self.scan_result_filepath = os.path.join(my_path, 'BDFServer\\', 'classifier\\', 'algorithms\\',
                                                      'predict.pkl')
             path = os.path.join(my_path, 'server_root', 'data', 'formated_data')
             check_number = str(self.check_id).zfill(11)
@@ -333,8 +333,8 @@ class predictAlg(algObject):
             alg_name = alg_info[12]
             self.algPara = alg_info[13]
             self.algType = alg_info[17]
-            path = os.path.join(os.path.dirname(__file__))[:-16]
-            self.algFileName = os.path.join(path, 'server_root\\', 'classifier\\', 'algorithms\\', alg_name + '.py')
+            path = os.path.join(os.path.dirname(__file__))[:-15]
+            self.algFileName = os.path.join(path, 'BDFServer\\', 'classifier\\', 'algorithms\\', alg_name + '.py')
         except Exception as e:
             print('readAlgFile', e)
 
@@ -480,6 +480,7 @@ class testAlg(algObject):
             end = stdout.index("finish")
             self.scan_num = stdout[start:end].strip()
             self.total_scan_num = 10
+            print("scan_num:", self.scan_num, "  total_scan_num:", self.total_scan_num)
         QApplication.processEvents()
 
 
