@@ -7055,7 +7055,7 @@ class server(socketServer):
             if ptotal!=0:
                 if _curPageIndex > ptotal:
                     _curPageIndex = ptotal
-                result = self.dbUtil.getClassifierInfoByPage(offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
+                result = self.dbUtil.getClsInfoByPage(offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
                 msgtip = [REQmsg[1], f"获取系统存在的模型信息", '', '']
                 # print(msgtip)
                 ret = ['1', REQmsg[1], result, ptotal]
@@ -7111,7 +7111,7 @@ class server(socketServer):
                         if ptotal!=0:
                             if _curPageIndex > ptotal:
                                 _curPageIndex = ptotal
-                            result = self.dbUtil.getClassifierInfoByPage(offset=(_curPageIndex - 1) * _Pagerows,
+                            result = self.dbUtil.getClsInfoByPage(offset=(_curPageIndex - 1) * _Pagerows,
                                                                         psize=_Pagerows)
                             ret = ['1', REQmsg[0], row,result,ptotal,_curPageIndex]
                             return msgtip, ret
@@ -7132,7 +7132,7 @@ class server(socketServer):
                     if ptotal!=0:
                         if _curPageIndex>ptotal:
                             _curPageIndex=ptotal
-                        result =self.dbUtil.getClassifierInfoByPage(offset=(_curPageIndex - 1) * _Pagerows, psize=_Pagerows)
+                        result =self.dbUtil.getClsInfoByPage(offset=(_curPageIndex - 1) * _Pagerows, psize=_Pagerows)
                         ret = ['1',REQmsg[0],0,result,ptotal,_curPageIndex]
                         return msgtip, ret
                     else:
@@ -7407,7 +7407,7 @@ class server(socketServer):
             _pagerows = REQmsg[3][1]
             if _pagerows <= 0:
                 _pagerows = 12
-            result = self.dbUtil.getClassifierInfoByPage(offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
+            result = self.dbUtil.getClsInfoByPage(offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
             msgtip = [REQmsg[2], f"数据库操作成功，页面控制", '', '']
             # print(msgtip)
             ret = ['1', REQmsg[1], result]

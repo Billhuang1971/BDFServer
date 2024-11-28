@@ -2635,7 +2635,7 @@ class dbUtil(MySqlService):
                           "classifier.set_id = set_info.set_id where {} = '{}'".format(where_name, where_value)
         cls_info = self.myQuery(sql)
         return cls_info
-    def getClassifierInfoByPage(self, offset='', psize=''):
+    def getClsInfoByPage(self, offset='', psize=''):
         sql = f"select classifier_name, alg_name, set_name,train_performance, test_performance from classifier " \
                   " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
                   "classifier.set_id = set_info.set_id limit {}, {}".format(offset, psize)
