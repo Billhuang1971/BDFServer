@@ -3950,8 +3950,12 @@ class server(socketServer):
                         stuids += str(dInfo[1])
                     else:
                         stuids += "," + str(dInfo[1])
-                qr, qnum = self.dbUtil.da_get_resultNumByClass(class_id, stuids)
-                ar, anum = self.dbUtil.da_get_resultAnswerTrueNumByClass(class_id, stuids)
+                if stuids != "":
+                    qr, qnum = self.dbUtil.da_get_resultNumByClass(class_id, stuids)
+                    ar, anum = self.dbUtil.da_get_resultAnswerTrueNumByClass(class_id, stuids)
+                else:
+                    qr='0'
+                    ar='0'
                 if qr == '0':
                     qnum = None
                 if ar == '0':
