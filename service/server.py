@@ -931,6 +931,9 @@ class server(socketServer):
             elif cmd == 'setBuild' and cmdID == 10:
                 tipmsg, ret = self.getSetSearch(cmdID, REQmsg[3])
                 REQmsg[3] = ret
+            elif cmd == 'setBuild' and cmdID == 11:
+                tipmsg, ret = self.getSetDescribe(cmdID, REQmsg[3])
+                REQmsg[3] = ret
 
 
             # 模型管理
@@ -972,6 +975,15 @@ class server(socketServer):
                 REQmsg[3] = ret
             elif cmd == 'classifier' and cmdID == 13:
                 tipmsg, ret = self.getClassifier_config(macAddr, REQmsg)
+                REQmsg[3] = ret
+            elif cmd == 'classifier' and cmdID == 14:
+                tipmsg, ret = self.getSelectSetInfo(cmdID, REQmsg)
+                REQmsg[3] = ret
+            elif cmd == 'classifier' and cmdID == 15:
+                tipmsg, ret = self.inquiryCls_set_Info(cmdID, REQmsg)
+                REQmsg[3] = ret
+            elif cmd == 'classifier' and cmdID == 16:
+                tipmsg, ret = self.classifierPaging_set(cmdID, REQmsg)
                 REQmsg[3] = ret
 
             # 模型训练
@@ -3744,8 +3756,12 @@ class server(socketServer):
                         stuids += str(dInfo[1])
                     else:
                         stuids += "," + str(dInfo[1])
-                qr, qnum = self.dbUtil.da_get_resultNumByClass(class_id, stuids)
-                ar, anum = self.dbUtil.da_get_resultAnswerTrueNumByClass(class_id, stuids)
+                if stuids != "":
+                    qr, qnum = self.dbUtil.da_get_resultNumByClass(class_id, stuids)
+                    ar, anum = self.dbUtil.da_get_resultAnswerTrueNumByClass(class_id, stuids)
+                else:
+                    qr='0'
+                    ar='0'
                 if qr == '0':
                     qnum = None
                 if ar == '0':
@@ -4247,7 +4263,7 @@ class server(socketServer):
             pname = ''
             if qvalue is not None and qvalue != "":
                 if qname == "检查单号":
-                    where_sql = f" check_info.check_number like '%{qvalue}' "
+                    where_sql = f" check_info.check_number like '%{qvalue}%' "
                 elif qname == "病人姓名":
                     pname = qvalue
                 elif qname == "测量日期":
@@ -5689,7 +5705,7 @@ class server(socketServer):
             #     thread.start()
 
             blockSize = 1024 * 1024  # 1M
-            data = self.appUtil.readFile(file_path=REQmsg[1], block_size=blockSize,
+            data = self.appUtil.readByte(file_path=REQmsg[1], block_size=blockSize,
                                          block_id=int(REQmsg[2].split('=')[1]))
             result = [f'{REQmsg[2]}', data]
             msgtip = [cmdID, f"返回{REQmsg[2]}数据", '', '']
@@ -5759,6 +5775,16 @@ class server(socketServer):
             if hasattr(self, 'setBuildService') and self.setBuildService is not None:
                 msgtip = [cmdID, f"当前有其他用户正在构建数据集，请稍等", '', '']
                 ret = ['0', cmdID, f"当前有其他用户正在构建数据集，请稍等", ["当前有其他用户正在构建数据集，请稍等"]]
+                return msgtip, ret
+
+            # 判断集合名称是否重复
+            setInfo = self.dbUtil.getSetBuildInfo(selColumn="set_name", after='set_info')
+            print(f'setInfo: {setInfo}')
+            setInfo = [info[0] for info in setInfo]
+            if REQmsg[0] in setInfo:
+                msgtip = [cmdID, f"当前数据集名重复，请重新命名", '', '']
+                ret = ['0', cmdID, f"当前数据集名重复，请重新命名", ["当前数据集名重复，请重新命名"]]
+                return msgtip, ret
 
             data = json.loads(REQmsg[1])
 
@@ -5797,6 +5823,8 @@ class server(socketServer):
                 else:
                     progress = self.setBuildService.getProgress()
                     ret = ['1', cmdID, f"构建数据集ing", ['building', progress]]
+                    if progress == 100:
+                        self.setBuildService = None
                 return msgtip, ret
             else:
                 print(f'线程为None')
@@ -5834,6 +5862,22 @@ class server(socketServer):
             setInfo = self.dbUtil.getSetBuildInfo(after=f"set_info where set_name like '%{REQmsg[3]}%'")
             msgtip = [cmdID, f"获取集合信息", '', '']
             ret = ['1', cmdID, f"获取集合信息", [len(setInfo), setInfo[start:start + REQmsg[1]]]]
+            return msgtip, ret
+        except Exception as e:
+            print('getSetSearch', e)
+            msgtip = [cmdID, f"获取集合信息失败", '', '']
+            ret = ['0', cmdID, f"获取集合信息失败, e: {e}", ['获取搜索数据集失败']]
+            return msgtip, ret
+
+    # 获取数据集搜索的结果
+    def getSetDescribe(self, cmdID, REQmsg):
+        print(f'getSetDescribe REQmsg: {REQmsg}')
+        try:
+            trainInfoPath = f'data/train_set/{REQmsg[3]}.npz'
+            testInfoPath = f'data/test_set/{REQmsg[4]}.npz'
+            msgtip = [cmdID, f"获取数据集详细信息", '', '']
+            ret = ['1', cmdID, f"获取数据集详细信息", [self.appUtil.getSetLabelInfo(trainInfoPath),
+                                                       self.appUtil.getSetLabelInfo(testInfoPath)]]
             return msgtip, ret
         except Exception as e:
             print('getSetSearch', e)
@@ -6838,7 +6882,7 @@ class server(socketServer):
             if ptotal!=0:
                 if _curPageIndex > ptotal:
                     _curPageIndex = ptotal
-                result = self.dbUtil.getClassifierInfoByPage(offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
+                result = self.dbUtil.getClsInfoByPage(offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
                 msgtip = [REQmsg[1], f"获取系统存在的模型信息", '', '']
                 # print(msgtip)
                 ret = ['1', REQmsg[1], result, ptotal]
@@ -6894,7 +6938,7 @@ class server(socketServer):
                         if ptotal!=0:
                             if _curPageIndex > ptotal:
                                 _curPageIndex = ptotal
-                            result = self.dbUtil.getClassifierInfoByPage(offset=(_curPageIndex - 1) * _Pagerows,
+                            result = self.dbUtil.getClsInfoByPage(offset=(_curPageIndex - 1) * _Pagerows,
                                                                         psize=_Pagerows)
                             ret = ['1', REQmsg[0], row,result,ptotal,_curPageIndex]
                             return msgtip, ret
@@ -6915,7 +6959,7 @@ class server(socketServer):
                     if ptotal!=0:
                         if _curPageIndex>ptotal:
                             _curPageIndex=ptotal
-                        result =self.dbUtil.getClassifierInfoByPage(offset=(_curPageIndex - 1) * _Pagerows, psize=_Pagerows)
+                        result =self.dbUtil.getClsInfoByPage(offset=(_curPageIndex - 1) * _Pagerows, psize=_Pagerows)
                         ret = ['1',REQmsg[0],0,result,ptotal,_curPageIndex]
                         return msgtip, ret
                     else:
@@ -6940,14 +6984,20 @@ class server(socketServer):
             algorithm_info = self.dbUtil.getAlgorithmInfo(where_name='type', where_value=REQmsg[3][2])
             ui_size = len(algorithm_info)
             ptotal = ceil(ui_size / _pagerows)  # 总页数
-            if _curPageIndex > ptotal:
-                _curPageIndex = ptotal
-            result = self.dbUtil.getalgorithmInfoByPage(where_name='type', where_value=REQmsg[3][2],
-                                                        offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
-            msgtip = [REQmsg[1], f"获取全部算法信息", '', '']
-            # print(msgtip)
-            ret = ['1', REQmsg[1], result, ptotal]
-            return msgtip, ret
+            if ptotal != 0:
+                if _curPageIndex > ptotal:
+                    _curPageIndex = ptotal
+                result = self.dbUtil.getalgorithmInfoByPage(where_name='type', where_value=REQmsg[3][2],
+                                                            offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
+                msgtip = [REQmsg[1], f"获取全部算法信息", '', '']
+                # print(msgtip)
+                ret = ['1', REQmsg[1], result, ptotal]
+                return msgtip, ret
+            else:
+                result = 0
+                msgtip = [REQmsg[0], f"无算法信息", '', '']
+                ret = ['2', REQmsg[0], result, ptotal]
+                return msgtip, ret
         except Exception as e:
             print('getAlgorithmInfo', e)
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', "", '']
@@ -6965,10 +7015,11 @@ class server(socketServer):
     def add_import_classifierInfo(self, macAddr, REQmsg):
         try:
             self.dbUtil.add_init_ClassifierInfo(classifier_name=REQmsg[3][0], alg_id=REQmsg[3][1],
-                                                set_id='DEFAULT', filename=REQmsg[3][2],
+                                                set_id=REQmsg[3][2], filename=REQmsg[3][3],
                                                 state='ready', train_performance='',
-                                                test_performance=REQmsg[3][4],
-                                                epoch_length=REQmsg[3][3], config_id=REQmsg[3][5], channels=REQmsg[3][6])
+                                                test_performance=REQmsg[3][5],
+                                                epoch_length=REQmsg[3][4], config_id=REQmsg[3][6],
+                                                channels=REQmsg[3][7])
             msgtip = [REQmsg[1], f"模型导入服务器", '', '']
             ret = ['1', REQmsg[1], REQmsg[3]]
             return msgtip, ret
@@ -7183,7 +7234,7 @@ class server(socketServer):
             _pagerows = REQmsg[3][1]
             if _pagerows <= 0:
                 _pagerows = 12
-            result = self.dbUtil.getClassifierInfoByPage(offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
+            result = self.dbUtil.getClsInfoByPage(offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
             msgtip = [REQmsg[2], f"数据库操作成功，页面控制", '', '']
             # print(msgtip)
             ret = ['1', REQmsg[1], result]
@@ -7238,6 +7289,73 @@ class server(socketServer):
         ret = ['1', cmdID, f"获取全部基本配置信息", configInfo]
         return msgtip, ret
 
+    def getSelectSetInfo(self, cmdID, REQmsg):
+        try:
+            _curPageIndex = REQmsg[3][0]
+            if _curPageIndex <= 0:
+                _curPageIndex = 1
+            _pagerows = REQmsg[3][1]
+            if _pagerows <= 0:
+                _pagerows = 12
+            Set_info = self.dbUtil.Inqcls_set(where_type=REQmsg[3][2])
+            ui_size = len(Set_info)
+            ptotal = ceil(ui_size / _pagerows)  # 总页数
+            if ptotal != 0:
+                if _curPageIndex > ptotal:
+                    _curPageIndex = ptotal
+                result = self.dbUtil.Inqcls_set(where_type=REQmsg[3][2],
+                                                            offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
+                msgtip = [REQmsg[1], f"模型管理：获取数据集信息", '', '']
+                # print(msgtip)
+                ret = ['1', REQmsg[1], result, ptotal]
+                return msgtip, ret
+            else:
+                result = 0
+                msgtip = [REQmsg[0], f"模型管理：无对应数据集信息", '', '']
+                ret = ['2', REQmsg[0], result, ptotal]
+                return msgtip, ret
+        except Exception as e:
+            print('getSetInfo', e)
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', "", '']
+            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}数据库操作不成功"]
+            return msgtip, ret
+    def inquiryCls_set_Info(self, macAddr, REQmsg):
+        try:
+            key_value = REQmsg[3][0]
+            catagory = REQmsg[3][3]
+            set_info = self.dbUtil.Inquiryset(where_name='set_name', where_like=key_value,
+                                                   where_type=catagory)
+            totalPage = ceil(len(set_info) / REQmsg[3][2])
+            start = (REQmsg[3][1] - 1) * REQmsg[3][2]
+            set_info = set_info[start:start + REQmsg[3][2]]
+            msgtip = [REQmsg[0], f"获取查询数据集信息", '', '']
+            # print(msgtip)
+            ret = ['1', REQmsg[0], [totalPage, set_info]]
+            return msgtip, ret
+        except Exception as e:
+            print('inquiryCls_set_Info', e)
+            msgtip = [REQmsg[0], f"获取查询数据集信息", '', '']
+            ret = ['0', REQmsg[0], e]
+            return msgtip, ret
+    def classifierPaging_set(self, macAddr, REQmsg):
+        try:
+            _curPageIndex = REQmsg[3][0]
+            category = REQmsg[3][3]
+            if _curPageIndex <= 0:
+                _curPageIndex = 1
+            _pagerows = REQmsg[3][1]
+            if _pagerows <= 0:
+                _pagerows = 12
+            result = self.dbUtil.getsetInfoByPage(where_type=category,offset=(_curPageIndex - 1) * _pagerows, psize=_pagerows)
+            msgtip = [REQmsg[2], f"数据库操作成功，页面控制", '', '']
+            # print(msgtip)
+            ret = ['1', REQmsg[1], result]
+            return msgtip, ret
+        except Exception as e:
+            print('usersetPaging', e)
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', "", '']
+            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}数据库操作不成功"]
+            return msgtip, ret
     # 脑电扫描
     def getAutoInitData(self, macAddr, REQmsg):
         try:

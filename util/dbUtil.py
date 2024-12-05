@@ -2004,14 +2004,14 @@ class dbUtil(MySqlService):
             msg['user'] += f"select distinct a.uid, a.account from user_info as a " \
                            f"left join sample_info as b on a.uid = b.uid " \
                            f"left join type_info as c on b.type_id = c.type_id " \
-                           f"where (b.end - b.begin) > {minSample} and (b.end - b.begin) < {maxSample} " \
+                           f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                            f"and c.type_name = '{type_name}'"
 
             msg['patientName'] += f"select distinct a.patient_id, a.name from patient_info as a " \
                                   f"Join check_info AS ci ON a.patient_id = ci.patient_id " \
                                   f"Join sample_info as b on ci.check_id = b.check_id " \
                                   f"left join type_info as c on b.type_id = c.type_id " \
-                                  f"where (b.end - b.begin) > {minSample} and (b.end - b.begin) < {maxSample} " \
+                                  f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                                   f"and c.type_name = '{type_name}'"
 
             msg[
@@ -2020,13 +2020,13 @@ class dbUtil(MySqlService):
                                f"left join patient_info as d on d.patient_id = a.patient_id " \
                                f"left join file_info as e on e.check_id = a.check_id " \
                                f"left join type_info as c on b.type_id = c.type_id " \
-                               f"where (b.end - b.begin) > {minSample} and (b.end - b.begin) < {maxSample} " \
+                               f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                                f"and c.type_name = '{type_name}'"
 
             msg['measureDate'] += f"select distinct a.measure_date from check_info as a " \
                                   f"JOIN sample_info as b on b.check_id = a.check_id " \
                                   f"left join type_info as c on b.type_id = c.type_id " \
-                                  f"where (b.end - b.begin) > {minSample} and (b.end - b.begin) < {maxSample} " \
+                                  f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                                   f"and c.type_name = '{type_name}'"
 
         if '科研标注' in source:
@@ -2046,7 +2046,7 @@ class dbUtil(MySqlService):
             msg['user'] += f"select distinct a.uid, a.account from user_info as a " \
                            f"left join reslab as b on a.uid = b.uid " \
                            f"left join type_info as c on b.type_id = c.type_id " \
-                           f"where (b.end - b.begin) > {minSample} and (b.end - b.begin) < {maxSample} " \
+                           f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                            f"and c.type_name = '{type_name}'" \
                            f"AND b.theme_id IN ({theme_str})"
 
@@ -2055,7 +2055,7 @@ class dbUtil(MySqlService):
                                   f"left join task as t on t.check_id = ci.check_id " \
                                   f"Join reslab as b on t.theme_id = b.theme_id " \
                                   f"left join type_info as c on b.type_id = c.type_id " \
-                                  f"where (b.end - b.begin) > {minSample} and (b.end - b.begin) < {maxSample} " \
+                                  f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                                   f"and c.type_name = '{type_name}'" \
                                   f"AND b.theme_id IN ({theme_str})"
 
@@ -2066,7 +2066,7 @@ class dbUtil(MySqlService):
                                f"left join patient_info as d on d.patient_id = a.patient_id " \
                                f"left join file_info as e on e.check_id = a.check_id " \
                                f"left join type_info as c on b.type_id = c.type_id " \
-                               f"where (b.end - b.begin) > {minSample} and (b.end - b.begin) < {maxSample} " \
+                               f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                                f"and c.type_name = '{type_name}'" \
                                f"AND b.theme_id IN ({theme_str})"
 
@@ -2074,7 +2074,7 @@ class dbUtil(MySqlService):
                                   f"left join task as t on t.check_id = a.check_id " \
                                   f"JOIN reslab as b on b.theme_id = t.theme_id  " \
                                   f"left join type_info as c on b.type_id = c.type_id " \
-                                  f"where (b.end - b.begin) > {minSample} and (b.end - b.begin) < {maxSample} " \
+                                  f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                                   f"and c.type_name = '{type_name}'" \
                                   f"AND b.theme_id IN ({theme_str})"
 
@@ -2683,7 +2683,7 @@ class dbUtil(MySqlService):
                           "classifier.set_id = set_info.set_id where {} = '{}'".format(where_name, where_value)
         cls_info = self.myQuery(sql)
         return cls_info
-    def getClassifierInfoByPage(self, offset='', psize=''):
+    def getClsInfoByPage(self, offset='', psize=''):
         sql = f"select classifier_name, alg_name, set_name,train_performance, test_performance from classifier " \
                   " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
                   "classifier.set_id = set_info.set_id limit {}, {}".format(offset, psize)
@@ -2769,7 +2769,30 @@ class dbUtil(MySqlService):
             return algorithm_info
         except Exception as e:
             print(e)
-
+    def Inqcls_set(self,where_type='',offset='',psize=''):
+        try:
+            if offset!='':
+                sql = f"select * from set_info where JSON_EXTRACT(description, '$.type') = '{where_type}'limit {offset}, {psize} "
+            else:
+                sql = f"select * from set_info where JSON_EXTRACT(description, '$.type') = '{where_type}'"
+            algorithm_info = self.myQuery(sql)
+            return algorithm_info
+        except Exception as e:
+            print(e)
+    def Inquiryset(self, where_name='', where_like='', where_type=''):
+        try:
+            sql = f"select * from set_info where {where_name} like '%{where_like}%' and JSON_EXTRACT(description, '$.type') = '{where_type}'"
+            algorithm_info = self.myQuery(sql)
+            return algorithm_info
+        except Exception as e:
+            print(e)
+    def getsetInfoByPage(self, where_type='', offset='', psize=''):
+        try:
+            sql = f"select * from set_info where JSON_EXTRACT(description, '$.type') = '{where_type}' limit {offset}, {psize}"
+            algorithm_info = self.myQuery(sql)
+            return algorithm_info
+        except Exception as e:
+            print(e)
 
     # 模型测试
     def getClassifierCount(self, classifier_name):

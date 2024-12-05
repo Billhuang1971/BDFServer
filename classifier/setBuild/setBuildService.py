@@ -3,6 +3,7 @@ from collections import defaultdict
 import numpy as np
 import mne
 from classifier.setBuild.runThread import runThread
+import gc
 
 
 class setBuildService:
@@ -220,44 +221,33 @@ class setBuildService:
             tempChannels = [name.replace('-REF', '').replace('EEG ', '') for name in self.curChannels]
             selected_channels_index = [tempChannels.index(channel) for channel in self.channels]
             print(f'selected_channels_index: {selected_channels_index}')
-            self.eegData = self.eegData.get_data()[np.array(selected_channels_index), :]
+            tempt_raw = self.eegData
+            self.eegData = tempt_raw.get_data()[np.array(selected_channels_index), :]
+            del tempt_raw
+            gc.collect()
         elif self.type == 'state' and self.isDefault:
             if self.scheme == 'State Neg Model 1':
-                print(f'采用默认通道')
-                # 这里是临时这样处理
-                bipolar_pairs = [
-                    ('Fp1', 'F7'), ('F7', 'M1'), ('M1', 'T3'), ('T3', 'T5'),
-                    ('T5', 'O1'), ('Fp1', 'F3'), ('F3', 'C3'), ('C3', 'P3'),
-                    ('P3', 'O1'), ('AFz', 'Fz'), ('Fz', 'Cz'), ('Cz', 'Pz'),
-                    ('Pz', 'Oz'), ('Fp2', 'F4'), ('F4', 'C4'), ('C4', 'P4'),
-                    ('P4', 'O2'), ('Fp2', 'F8'), ('F8', 'M2'), ('M2', 'T4'),
-                    ('T4', 'T6'), ('T6', 'O2')
-                ]
-                self.eegData.rename_channels(lambda x: x.split('-')[0][4:])  # 移除原始参考后缀
-                # 创建双极参考通道
-                self.eegData = mne.set_bipolar_reference(self.eegData,
-                                                         anode=[pair[0] for pair in bipolar_pairs],
-                                                         cathode=[pair[1] for pair in bipolar_pairs],
-                                                         copy=True)
-                selected_channels = ['Fp1-F7', 'F7-M1', 'M1-T3', 'T3-T5', 'T5-O1', 'Fp1-F3', 'F3-C3',
-                                     'C3-P3', 'P3-O1', 'AFz-Fz', 'Fz-Cz', 'Cz-Pz', 'Pz-Oz', 'Fp2-F4',
-                                     'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-M2', 'M2-T4', 'T4-T6',
-                                     'T6-O2']
-                self.channels = selected_channels
-                self.eegData.pick(selected_channels)
                 self.eegData.filter(l_freq=1, h_freq=45, l_trans_bandwidth='auto', h_trans_bandwidth='auto',
                            filter_length='auto', phase='zero', fir_window='hamming')
                 # 降采样，256果然是太大了
                 print(f"sfreq: {self.eegData.info['sfreq']}")
                 self.eegData = self.eegData.resample(128)
-
                 # 新版的这个有滤波
-                self.eegData = self.eegData.get_data()
+                tempt_raw = self.eegData
+                self.eegData = tempt_raw.get_data()
+                del tempt_raw
+                gc.collect()
                 print(f'raw_data: {self.eegData.shape}')
             else:
-                self.eegData = self.eegData.get_data()
+                tempt_raw = self.eegData
+                self.eegData = tempt_raw.get_data()
+                del tempt_raw
+                gc.collect()
         else:
-            self.eegData = self.eegData.get_data()
+            tempt_raw = self.eegData
+            self.eegData = tempt_raw.get_data()
+            del tempt_raw
+            gc.collect()
 
         self.eegLength = self.eegData.shape[1]
         print(f'eegData.shape: {self.eegData.shape}')

@@ -85,7 +85,7 @@ class predictAlgorithm(AlgorithmTemplate):
 
     # 通过格式化脑电文件存储路径获取脑电文件的mne库中raw对象
     def get_scanset_raw(self):
-        raw = mne.io.read_raw_edf(input_fname=self.eegFileName)
+        raw = mne.io.read_raw_bdf(input_fname=self.eegFileName)
         return raw
 
     # 开始波形标注
