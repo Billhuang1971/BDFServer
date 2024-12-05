@@ -293,19 +293,25 @@ class dbUtil(MySqlService):
             measure_date = check_info[4]
             cUid = check_info[5]
             state = 'notUploaded'
-            # cUid可以传'NULL'在这里写语句时候不加‘’,传入就是NULL
-            sql = f"INSERT INTO `check_info`(check_number, patient_id, description, pUid, measure_date, state,cUid ) VALUES ('{check_num}','{patient_id}', '{description}', '{pUid}','{measure_date}', '{state}',{cUid})"
+
+            # 先检查检查单号是否存在
+            check_sql = f"SELECT COUNT(*) FROM `check_info` WHERE check_number = '{check_num}'"
+            check_flag = self.myQuery(check_sql)
+
+            if check_flag[0][0] > 0:
+                return ['0', f"添加失败，检查单号重复！！"]
+
+            # cUid可以传'NULL'，在这里写语句时不加‘’，传入就是NULL
+            sql = f"INSERT INTO `check_info`(check_number, patient_id, description, pUid, measure_date, state, cUid) VALUES ('{check_num}', '{patient_id}', '{description}', '{pUid}', '{measure_date}', '{state}', {cUid})"
             flag = self.myExecuteSql(sql)
+
             if flag == "":
-                return ['1', f"添加病人检查信息成功"]
+                return ['1', "添加病人检查信息成功！！"]
             else:
-                print("flag:", flag)
-                if str(flag).find('Duplicate') != -1:
-                    return ['0', f"添加失败，检查单号重复！！"]
-                else:
-                    return ['0', f"添加病人检查信息失败"]
+                return ['0', "添加病人检查信息失败！！"]
         except Exception as e:
             print('add_checkInfo', e)
+            return ['0', f"服务端异常！！{e}"]
 
     # 更新脑电检查信息
     def update_checkInfo(self, check_info, flag=''):
@@ -362,6 +368,46 @@ class dbUtil(MySqlService):
             return '0', None
         return '1', file_info
 
+    # 根据check_number获取脑电数据文件相关信息
+    def get_fileInfoByCheckNumber(self, check_number='', where_name='', where_value='', wherename='', wherevalue=''):
+        """
+        查询 file_info 表的信息。如果提供 check_number，会先通过 check_info 表查找对应的 check_id。
+
+        :param check_number: 检查编号，用于查找对应的 check_id。
+        :param where_name: 第一个条件的字段名。
+        :param where_value: 第一个条件的值。
+        :param wherename: 第二个条件的字段名。
+        :param wherevalue: 第二个条件的值。
+        :return: ('状态', file_info, check_id) 状态为 '1' 表示成功，'0' 表示失败。
+        """
+        try:
+            # 如果提供了 check_number，先查询 check_id
+            if check_number:
+                sql_check_info = f"SELECT check_id FROM check_info WHERE check_number = '{check_number}'"
+                check_info = self.myQuery(sql_check_info)
+                if not check_info:
+                    return '0', None, None
+                check_id = check_info[0][0]  # 提取 check_id
+            else:
+                check_id = None
+
+            # 构造查询 file_info 的 SQL
+            if check_id:
+                sql = f"SELECT * FROM file_info WHERE check_id = '{check_id}'"
+            elif where_name == '':
+                sql = "SELECT check_id, file_id, state FROM file_info"
+            elif where_name and wherename:
+                sql = f"SELECT * FROM file_info WHERE {where_name} = {where_value} AND {wherename} = {wherevalue}"
+            else:
+                sql = f"SELECT * FROM file_info WHERE {where_name} LIKE '%{where_value}%'"
+
+            # 查询 file_info 表
+            file_info = self.myQuery(sql)
+            return '1', file_info, check_id
+        except Exception as e:
+            print('get_fileInfo_by_checkNumber', e)
+            return '0', None, None
+
     # 向数据库中脑电数据表增加记录
     def add_fileInfo(self, filemsg):
         try:
@@ -399,6 +445,8 @@ class dbUtil(MySqlService):
     #  删除数据库中脑电数据表中某一状态信息
     def del_fileInfo(self, check_id=None, state='', file_id=None, flag=''):
         try:
+            if state == '' and flag == '':
+                sql = f"delete from file_info where check_id = {check_id} and file_id = {file_id}"
             if flag == '':
                 sql = f"delete from file_info where state = '{state}' and check_id = {check_id} "
             else:

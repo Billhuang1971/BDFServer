@@ -116,6 +116,59 @@ class appUtil():
         sysd = eval(d)
         return sysd
 
+    # 整合laod_dataDynamical中打开文件、读文件关闭文件
+    def readEEG(self, check_id , file_id , _t_min , _t_max):
+        # 打开文件
+        try:
+            package='{:>011}'.format(check_id)
+            fileNm = '{:>03}.bdf'.format(file_id)
+            path = os.path.join(self.root_path, 'BDFServer','data', 'formated_data', package, fileNm)
+            local_raw = mne.io.read_raw_bdf(path)
+        except (IOError,OSError) as err:
+            ret_1 = ['0', '打开EEG文件无效', path]
+            print(f"openEEGFile：except={err}")
+        try:
+            local_channels = local_raw.info['ch_names']
+            local_index_channels = mne.pick_channels(local_channels, include=[])
+            local_sampling_rate = int(local_raw.info['sfreq'])
+            local_n_times = local_raw.n_times
+            local_duration = int(local_n_times // local_sampling_rate)
+            meas_date = local_raw.info['meas_date']
+            if isinstance(meas_date, tuple):
+                meas_date = datetime.datetime.fromtimestamp(meas_date[0])
+            local_start_time = meas_date.strftime('%H:%M:%S')
+            local_end_time = meas_date + datetime.timedelta(seconds=local_duration)
+            local_end_time = local_end_time.strftime('%H:%M:%S')
+
+            ret_1 = ['1', local_raw, local_channels, local_index_channels,
+               local_sampling_rate, local_n_times, local_duration, meas_date, local_start_time, local_end_time]
+        except Exception as err:
+            ret_1 = ['0', f'读EEG文件头异常:{err}']
+            print(f"openEEGFile：读EEG文件头异常={err}")
+
+        # 读文件
+        raw = ret_1[1]
+        _index_channels = ret_1[3]
+        try:
+            raw_copy = raw.copy()
+            if _t_min != -1:
+                if _t_max == -1:
+                    raw_copy.crop(tmin=_t_min, include_tmax=True)
+                else:
+                    raw_copy.crop(tmin=_t_min, tmax=_t_max)
+            raw_copy.load_data()
+            data, times = raw_copy[_index_channels, :]
+            data = data * (pow(10, 4))
+            #data = data * 1037
+            ret = ['1', data, times]
+            print(f"readEEGfile：ok:len(data)={len(data)}:{times}")
+        except Exception as e:
+            ret = ['0',f'读数据块raw_copy不成功:{e}.']
+
+        # 关闭文件
+        raw.close()
+        return ret
+
     def closeEEGfile(self,raw):
         raw.close()
         return
@@ -348,23 +401,25 @@ class appUtil():
 
     # 脑电导入模块
     # 实现生成文件名功能
-    def makeFilePath(self, check_id):
-        # FIXME:生成的名字规则有问题
-        count = 0
-        flag = 0
-        rp, file_list = self.dbUtil.get_fileInfo('check_id', check_id)
-        if file_list:
-            for f in file_list:
-                count += 1
-                if count != int(f[1]):
-                    flag = 1
-                    break
-            if flag == 0:
-                count += 1
-        else:
-            count += 1
-        filename = str(check_id).rjust(11, '0') + '_' + str(count).rjust(3, '0')
-        return filename, count
+    def makeFilePath(self,check_number):
+        """
+        根据 check_number 查询 file_info 表，生成文件名。
+        文件名格式为：check_id（左填充11位） + '_' + file_id（左填充3位）。
+        file_id 为现有最大值加1。
+
+        :param check_number: 表单号。
+        :return: 生成的文件名和新文件ID。
+        """
+        # 查询 file_info 表获取所有 file_id
+        rp, file_list , check_id = self.dbUtil.get_fileInfoByCheckNumber(check_number)
+
+        # 如果 file_list 不为空，取最大 file_id，否则从1开始
+        max_file_id = max((int(f[1]) for f in file_list), default=0)
+        new_file_id = max_file_id + 1
+
+        # 格式化文件名
+        filename = f"{str(check_id).rjust(11, '0')}_{str(new_file_id).rjust(3, '0')}"
+        return filename, new_file_id ,check_id
 
     # 整合laod_dataDynamical中打开文件、读文件关闭文件
     def readEEG(self, check_id, file_id, _t_min, _t_max):
@@ -438,6 +493,30 @@ class appUtil():
                 # received_size += len(rdata)
         except Exception as e:
             print('writeEEG', e)
+
+    # 这里写文件不能仅仅是追加，要能写入固定的块，不然会出问题
+    # 写文件功能
+    def writeByteXXX(self, savePath, data):
+        try:
+            with open(savePath, 'ab') as f:
+                f.write(data)
+        except Exception as e:
+            print('writeByte', e)
+
+    def writeByte(self, savePath, data, block_size, block_id):
+        try:
+            print(f'writeByte savePath: {savePath}, block_size: {block_size}, block_id: {block_id}')
+            with open(savePath, 'r+b') as f:  # 使用 'r+b' 以支持随机读写
+                write_position = (block_id - 1) * block_size
+                f.seek(write_position)  # 移动到指定的块位置
+                f.write(data)
+        except FileNotFoundError:
+            # 如果文件不存在，创建文件并写入
+            with open(savePath, 'wb') as f:
+                print(f'File not found, creating new file: {savePath}')
+                f.write(data)
+        except Exception as e:
+            print('writeByte error:', e)
 
     # FIXME:思考将传入的过多默认参数改为**c这种传递方式
     # 打包文件读写返回消息
