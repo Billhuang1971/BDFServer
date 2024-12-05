@@ -440,7 +440,7 @@ class appUtil():
         except Exception as e:
             print('writeEEG', e)
 
-    # fixme:这里写文件不能仅仅是追加，要能写入固定的块，不然会出问题
+    # 这里写文件不能仅仅是追加，要能写入固定的块，不然会出问题
     # 写文件功能
     def writeByteXXX(self, savePath, data):
         try:
