@@ -95,7 +95,7 @@ class EEGUpload(object):
         except Exception as e:
             print(f"writeEEG 出错: {e}")
             account = REQmsg[3][0] if REQmsg and len(REQmsg) > 3 else "Unknown"
-            return self._error_response(account, f"脑电文件上传出错: {e}")
+            return self._error_response(account, f"脑电文件上传出错: {e}",number ,filemsg)
 
     # 各种状态处理
     def _handle_start(self, account, filemsg, check_id, file_id, number):
