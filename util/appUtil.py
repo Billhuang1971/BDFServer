@@ -442,13 +442,6 @@ class appUtil():
 
     # 这里写文件不能仅仅是追加，要能写入固定的块，不然会出问题
     # 写文件功能
-    def writeByteXXX(self, savePath, data):
-        try:
-            with open(savePath, 'ab') as f:
-                f.write(data)
-        except Exception as e:
-            print('writeByte', e)
-
     def writeByte(self, savePath, data, block_size, block_id):
         try:
             print(f'writeByte savePath: {savePath}, block_size: {block_size}, block_id: {block_id}')
@@ -528,7 +521,7 @@ class appUtil():
         return data
 
     # 写文件功能
-    def writeByte(self, savePath, data):
+    def writeByteXXX(self, savePath, data):
         try:
             with open(savePath, 'ab') as f:
                 f.write(data)
