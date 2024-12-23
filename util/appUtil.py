@@ -173,7 +173,7 @@ class appUtil():
         raw.close()
         return
 
-    def readEEGfile(self, raw,t_index_channels, _tmin, _t_max):
+    def readEEGfileXXX(self, raw,t_index_channels, _tmin, _t_max):
         try:
             raw_copy = raw.copy()
             if _tmin != -1:
@@ -184,11 +184,41 @@ class appUtil():
             raw_copy.load_data()
             data, times = raw_copy[t_index_channels, :]
             data = data * (pow(10, 4))
-            #data = data * 1037
+            # data = data * 1037
             ret = ['1', data, times]
             print(f"readEEGfile：ok:len(data)={len(data)}:{times}")
         except Exception as e:
-            ret = ['0',f'读数据块raw_copy不成功:{e}.']
+            ret = ['0', f'读数据块raw_copy不成功:{e}.']
+        return ret
+
+    def readEEGfile(self, raw, t_index_channels, _tmin, _t_max):
+        try:
+            raw_copy = raw.copy()
+            sfreq = raw.info['sfreq']
+            if _tmin != -1:
+                if _t_max == -1:
+                    # 处理到末尾的情况
+                    start_sample = int(_tmin * sfreq)
+                    end_sample = raw.n_times  # 直接取到文件末尾
+                else:
+                    # 计算要截取的数据范围
+                    start_sample = int(_tmin * sfreq)
+                    end_sample = int(_t_max * sfreq)
+            else:
+                # 如果 _tmin 为 -1，直接返回全部数据
+                start_sample = 0
+                end_sample = raw.n_times
+            # 检查边界防止越界
+            if start_sample < 0 or end_sample > raw.n_times:
+                raise ValueError("时间范围超出数据长度！")
+            # 获取指定通道和范围的数据
+            data, times = raw_copy[t_index_channels, start_sample:end_sample]
+            data = data * (pow(10, 4))
+            ret = ['1', data, times]
+            print(f"readEEGfile：ok:len(data)={len(data[0])}, times={times[-1]}")
+        except Exception as e:
+            # 捕获异常返回错误信息
+            ret = ['0', f'读数据块raw_copy不成功: {e}.']
         return ret
 
     def openEEGFile(self, check_id, file_id):
