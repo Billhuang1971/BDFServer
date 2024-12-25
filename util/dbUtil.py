@@ -445,12 +445,12 @@ class dbUtil(MySqlService):
     #  删除数据库中脑电数据表中某一状态信息
     def del_fileInfo(self, check_id=None, state='', file_id=None, flag=''):
         try:
-            if state == '' and flag == '':
-                sql = f"delete from file_info where check_id = {check_id} and file_id = {file_id}"
+            # if flag == '1':
+            #     sql = f"delete from file_info where check_id = {check_id} and file_id = {file_id}"
             if flag == '':
                 sql = f"delete from file_info where state = '{state}' and check_id = {check_id} "
             else:
-                sql = f"delete from file_info where state = '{state}' and check_id = {check_id} and file_id = {file_id}"
+                sql = f"delete from file_info where check_id = {check_id} and file_id = {file_id}"
             self.myExecuteSql(sql)
         except Exception as e:
             print('del_fileInfo', e)
