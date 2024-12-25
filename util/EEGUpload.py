@@ -123,7 +123,6 @@ class EEGUpload(object):
             else:
                 return self._error_response(account, "向数据库添加脑电数据记录失败", number, filemsg)
 
-    # TODO:如果该文件已存在，删除后再创建
     def makeFile(self,check_id,file_id):
         # 判断目录是否存在
         dirname = str(check_id).rjust(11, '0')
