@@ -20,6 +20,7 @@ from service.socketServer import socketServer
 # from classifier.setBuild.EEGDeepState import EEGDeepState
 from classifier.setBuild.randomState import randomState
 from classifier.setBuild.randomWave import randomWave
+from util.EEGUpload import EEGUpload
 from util.algobject import trainAlg, testAlg, predictAlg
 
 
@@ -36,6 +37,7 @@ class server(socketServer):
         self.diag_mutex = threading.Lock()
         self.filename_mutex = threading.Lock()
         self.permission_mutex = threading.Lock()
+        self.EEGUploadService = EEGUpload(self.dbUtil, self.appUtil)
     def appMain(self, clientAddr, REQmsg):
         userID = REQmsg[2]
         macAddr = REQmsg[3][0]
@@ -154,12 +156,18 @@ class server(socketServer):
             elif cmd == 'dataImport' and cmdID == 3:
                 tipmsg, ret = self.addCheckInfo(REQmsg)
                 REQmsg[3] = ret
-            # 检查脑电文件
+            # 检查脑电文件配置
             elif cmd == 'dataImport' and cmdID == 4:
-                tipmsg, ret = self.checkMakeFileName(REQmsg)
+                tipmsg, ret = self.checkConfig(REQmsg)
+                REQmsg[3] = ret
+            # 生成文件名请求
+            elif cmd == 'dataImport' and cmdID == 10:
+                print("这里生成文件名的REQmsg是：", REQmsg)
+                tipmsg, ret = self.makeFileName(REQmsg)
                 REQmsg[3] = ret
             # 写脑电请求
             elif cmd == 'dataImport' and cmdID == 5:
+                print("这里的REQmsg是：", REQmsg)
                 tipmsg, ret = self.writeEEG(REQmsg)
                 REQmsg[3] = ret
             # 更新脑电检查信息请求
@@ -169,6 +177,10 @@ class server(socketServer):
             # 获取脑电检查信息
             elif cmd == 'dataImport' and cmdID == 7:
                 tipmsg, ret = self.getFileInfo(REQmsg)
+                REQmsg[3] = ret
+            # 删除脑电检查文件
+            elif cmd == 'dataImport' and cmdID == 11:
+                tipmsg, ret = self.delFileInfo(REQmsg)
                 REQmsg[3] = ret
             # 获取病人详细信息
             elif cmd == 'dataImport' and cmdID == 8:
@@ -1578,7 +1590,8 @@ class server(socketServer):
             return msgtip, ret
 
 
-        # 根据传入参数删除数据库病人诊断信息
+    # 根据传入参数删除数据库病人诊断信息
+    # 不仅要删除检查信息，相关脑电记录（包括文件和数据库记录）都需要删除
 
     def delPatientCheckInfo(self, REQmsg):
         try:
@@ -1696,7 +1709,7 @@ class server(socketServer):
             ret = ['0', REQmsg[1], f"脑电上传失败:{e}", [None]]
             return msgtip, ret
 
-    def checkMakeFileName(self, REQmsg):
+    def checkConfig(self, REQmsg):
         try:
             account = REQmsg[3][0]
             user_id = REQmsg[3][1]
@@ -1704,7 +1717,6 @@ class server(socketServer):
             freq = REQmsg[3][3]
             # 获取用户基本配置信息
             congfig_id = filemsg[4]
-
             ru, user_config = self.dbUtil.query_configData('config_id', congfig_id)
             if ru == '1':
                 # 截取最需要的部分
@@ -1717,247 +1729,45 @@ class server(socketServer):
                     sampling_rate = int(user_config[0])
                     # 判断用户当前配置是否适合处理该脑电文件
                     if (freq > sampling_rate):
-                        try:
-                            # 制作文件名
-                            check_id = filemsg[1]
-                            # 这里增加一个锁，保证服务端同时只为一个用户生成文件名，并添加数据库记录
-                            self.filename_mutex.acquire()
-                            filename, file_id = self.appUtil.makeFilePath(check_id)
-                            filemsg[2] = file_id
-                            self.dbUtil.add_fileInfo(filemsg)
-                            self.filename_mutex.release()
-                        except Exception as e:
-                            print('checkMakeFileName_makeFilename', e)
-                            return
-                        if filename:
-                            msgtip = [account, f"检查脑电文件配置成功，生成文件名成功", '', '']
-                            ret = ['1', REQmsg[1], f"检查脑电文件配置成功，生成文件名成功", [user_config, filename],filemsg]
-                            return msgtip, ret
-                        else:
-                            msgtip = [account, f"检查脑电文件配置成功，生成文件名失败", '', '']
-                            ret = ['0', REQmsg[1], f"检查脑电文件配置成功，生成文件名失败", [user_config]]
-                            return msgtip, ret
+                        msgtip = [account, f"检查脑电文件配置成功", '', '']
+                        ret = ['1', REQmsg[1], f"检查脑电文件配置成功", [user_config],filemsg]
+                        return msgtip, ret
                     # 较低采样率不进行转化
                     else:
-                        msgtip = [account, f"当前脑电文件采样率为:{freq}和用户基本配置采样率:{sampling_rate}不符!!!!",
-                                  '', '']
-                        ret = ['2', REQmsg[1],
-                               f"当前脑电文件采样率为:{freq}和用户基本配置采样率:{sampling_rate}不符!!!!\n请重新去配置选择模块选合适的功能！！",
-                               [user_config]]
+                        msgtip = [account, f"当前脑电文件采样率为:{freq}和用户基本配置采样率:{sampling_rate}不符!!!!", '', '']
+                        ret = ['2', REQmsg[1], f"当前脑电文件采样率为:{freq}和用户基本配置采样率:{sampling_rate}不符!!!!\n请重新去配置选择模块选合适的功能！！",[user_config]]
                         return msgtip, ret
                 else:
                     msgtip = [account, f"未在数据库找到当前配置信息！！", '', '']
                     ret = ['0', REQmsg[1], f"未在数据库找到当前配置信息！！", [None]]
                     return msgtip, ret
-
-
             else:
                 msgtip = [account, f"获取配置失败", '', '']
                 ret = ['0', REQmsg[1], f"获取配置失败", [None]]
                 return msgtip, ret
         except Exception as e:
-            print('checkMakeFileName', e)
+            print('checkConfig', e)
             account = REQmsg[3][0]
             msgtip = [account, f"脑电上传失败:{e}", '', '']
             ret = ['0', REQmsg[1], f"脑电上传失败:{e}", [None]]
             return msgtip, ret
 
-        # 根据传入参数写入脑电数据
-        # TODO：修改msgtip显示信息， 添加clean状态
-        # TODO: 需要添加修改check_info表的操作
+    # 生成文件名
+    def makeFileName(self,REQmsg):
+        msgtip ,ret = self.EEGUploadService.makeFileName(REQmsg)
+        return msgtip ,ret
 
-    def writeEEG(self, REQmsg):
+    # 根据传入参数写入脑电数据
+    def writeEEG(self,REQmsg):
         try:
-            account = REQmsg[3][0]
-            filemsg = REQmsg[3][1]
-            state = filemsg[0]
-            check_id = filemsg[1]
-            file_id = filemsg[2]
-            # 实现脑电传输协议5.1部分
-            if state == 'start':
-                rf, result = self.dbUtil.get_fileInfo('check_id', check_id, 'file_id', file_id)
-                # TODO：这里是否需要去掉这个开始部分
-                # 判断数据库是否有这条记录
-                if result:
-                    s_mac = result[0][5]
-                    c_mac = filemsg[3]
-                    if s_mac == c_mac:
-                        self.dbUtil.update_checkInfo([check_id, 'uploading'], flag='1')
-                        self.dbUtil.update_fileInfo(filemsg, 'notUploaded', 0)
-                        filemsg = self.appUtil.packageMsg('waiting', 1)
-                        msgtip = [account, f"发送脑电传输请求成功，并更新数据库脑电数据成功！", '', '']
-                        ret = ['1', REQmsg[1], f"发送脑电传输请求成功，并更新数据库脑电数据成功！！", filemsg]
-                        return msgtip, ret
-                    else:
-                        filemsg = self.appUtil.packageMsg('wrongSite')
-                        msgtip = [account, f"发送脑电传输请求失败，文件上传地址和数据库内mac地址不符！！", '', '']
-                        ret = ['1', REQmsg[1], f"发送脑电传输请求失败，文件上传地址和数据库内mac地址不符！", filemsg]
-                        return msgtip, ret
-                else:
-                    result = self.dbUtil.add_fileInfo(filemsg)
-                    if result:
-                        self.dbUtil.update_checkInfo([check_id, 'uploading'])
-                        filemsg = self.appUtil.packageMsg('waiting', 1)
-                        msgtip = [account, f"发送脑电传输请求成功！向数据库添加脑电数据记录成功", '', '']
-                        ret = ['1', REQmsg[1], f"发送脑电传输请求成功！向数据库添加脑电数据记录成功", filemsg]
-                        return msgtip, ret
-                    else:
-                        msgtip = [account, f"发送脑电传输请求成功！向数据库添加脑电数据记录失败", '', '']
-                        ret = ['0', REQmsg[1], f"发送脑电传输请求成功！向数据库添加脑电数据记录失败", filemsg]
-                        return msgtip, ret
-
-            # 实现脑电传输协议5.2部分
-            elif state == 'uploading':
-                data = filemsg[5]
-                rf, result = self.dbUtil.get_fileInfo('check_id', check_id, 'file_id', file_id)
-                # 判断数据库是否有这条记录
-                if result:
-                    s_mac = result[0][5]
-                    c_mac = filemsg[3]
-                    sblock_id = result[0][4]
-                    cblock_id = filemsg[4]
-                    # 验证Mac地址
-                    if s_mac == c_mac:
-                        block_id = sblock_id + 1
-                        # 验证块是否和需要一致
-                        if cblock_id == block_id:
-                            self.appUtil.writeEEG(check_id, file_id, data)
-                            self.dbUtil.update_fileInfo(filemsg, 'uploading', block_id)
-                            filemsg = self.appUtil.packageMsg('waiting', block_id + 1)
-                            msgtip = [account, f"发送脑电传输请求成功，并更新数据库脑电数据成功！", '', '']
-                            ret = ['1', REQmsg[1], f"发送脑电传输请求成功，并更新数据库脑电数据成功！！", filemsg]
-                            return msgtip, ret
-                        # 当传过来的块和需要的块不一致
-                        else:
-                            filemsg = self.appUtil.packageMsg('wrongBlock', block_id)
-                            msgtip = [account, f"上传脑电数据，上传数据块和服务端需要数据块不一致！！", '', '']
-                            ret = ['1', REQmsg[1], f"上传脑电数据，上传数据块和服务端需要数据块不一致！！", filemsg]
-                            return msgtip, ret
-                    else:
-                        filemsg = self.appUtil.packageMsg('wrongSite')
-                        msgtip = [account, f"发送脑电传输请求失败，文件上传地址和数据库内mac地址不符！！", '', '']
-                        ret = ['1', REQmsg[1], f"发送脑电传输请求失败，文件上传地址和数据库内mac地址不符！", filemsg]
-                        return msgtip, ret
-                else:
-                    filemsg = self.appUtil.packageMsg('wrongServer')
-                    msgtip = [account, f"服务端不存在该条脑电数据记录", '', '']
-                    ret = ['1', REQmsg[1], f"服务端不存在该条脑电数据记录", filemsg]
-                    return msgtip, ret
-
-            # 实现协议5.3
-            elif state == 'uploaded':
-                rf, result = self.dbUtil.get_fileInfo('check_id', check_id, 'file_id', file_id)
-                # 判断数据库是否有这条记录
-                if result:
-                    s_mac = result[0][5]
-                    c_mac = filemsg[3]
-                    sblock_id = result[0][4]
-                    if s_mac == c_mac:
-                        self.dbUtil.update_fileInfo(filemsg, 'uploaded', sblock_id)
-                        filemsg = self.appUtil.packageMsg('uploaded')
-                        msgtip = [account, f"当前脑电数据文件传送完成！", '', '']
-                        ret = ['1', REQmsg[1], f"当前脑电数据文件传送完成！！！", filemsg]
-                        return msgtip, ret
-                    else:
-                        filemsg = self.appUtil.packageMsg('wrongSite')
-                        msgtip = [account, f"发送脑电传输请求失败，文件上传地址和数据库内mac地址不符！！", '', '']
-                        ret = ['1', REQmsg[1], f"发送脑电传输请求失败，文件上传地址和数据库内mac地址不符！", filemsg]
-                        return msgtip, ret
-
-            # 实现协议5.4
-            elif state == 'clean':
-                # TODO：lj20240708后面需要测试一下效果
-                rf, result = self.dbUtil.get_fileInfo('check_id', check_id, 'file_id', file_id)
-                # 判断数据库是否有这条记录
-                if result:
-                    s_mac = result[0][5]
-                    c_mac = filemsg[3]
-                    state = result[0][3]
-                    # 验证Mac地址
-                    if s_mac == c_mac and (state == 'notUploaded' or state == 'uploading'):
-                        result = self.dbUtil.del_fileInfo(check_id=check_id, file_id=file_id, state='notUploaded',
-                                                          flag='1')
-                        if result:
-                            result_1 = self.appUtil.removeFile(check_id=check_id, file_id=file_id, flag='1')
-                            if result_1:
-                                filemsg = self.appUtil.packageMsg('cleaned')
-                                msgtip = [account, f"清除相关的脑电数据成功！！", '', '']
-                                ret = ['1', REQmsg[1], f"清除相关的脑电数据成功！", filemsg]
-                                return msgtip, ret
-                            else:
-                                msgtip = [account, f"删除相关文件信息成功,删除远程脑电文件失败", '', '']
-                                ret = ['0', REQmsg[1], f"删除相关文件信息成功,删除远程脑电文件失败",
-                                       [check_id, file_id]]
-                                return msgtip, ret
-                        else:
-                            msgtip = [account, f"删除相关文件信息失败", '', '']
-                            ret = ['0', REQmsg[1], f"删除相关文件信息失败", [check_id, file_id]]
-                            return msgtip, ret
-
-                    # elif s_mac == c_mac and state == 'uploading':
-                    #     filemsg = self.appUtil.packageMsg('recover', check_id=check_id, file_name=str(file_id).rjust(3, '0') + '.bdf', mac=c_mac)
-                    #     msgtip = [account, f"已有正在上传的脑电数据！！", '', '']
-                    #     ret = ['1', REQmsg[1], f"已有正在上传的脑电数据！", filemsg]
-                    #     return msgtip, ret
-
-                    elif s_mac == c_mac and state == 'uploaded':
-                        filemsg = self.appUtil.packageMsg('uploaded')
-                        msgtip = [account, f"已有上传完成的脑电数据！！", '', '']
-                        ret = ['1', REQmsg[1], f"已有上传完成的脑电数据！", filemsg]
-                        return msgtip, ret
-
-                    else:
-                        filemsg = self.appUtil.packageMsg('unknownError')
-                        msgtip = [account, f"发送脑电数据，出现未知错误！！", '', '']
-                        ret = ['1', REQmsg[1], f"发送脑电数据，出现未知错误！", filemsg]
-                        return msgtip, ret
-                else:
-                    filemsg = self.appUtil.packageMsg('wrongServer')
-                    msgtip = [account, f"服务端不存在该条脑电数据记录", '', '']
-                    ret = ['1', REQmsg[1], f"服务端不存在该条脑电数据记录", filemsg]
-                    return msgtip, ret
-
-            # 实现协议5.5
-            elif state == 'continue':
-                rf, result = self.dbUtil.get_fileInfo('check_id', check_id, 'file_id', file_id)
-                # 判断数据库是否有这条记录
-                if result:
-                    s_mac = result[0][5]
-                    c_mac = filemsg[3]
-                    sblock_id = result[0][4]
-                    # 验证Mac地址
-                    if s_mac == c_mac:
-                        block_id = sblock_id + 1
-                        # 验证块是否和需要一致
-                        filemsg = self.appUtil.packageMsg('waiting', block_id)
-                        msgtip = [account, f"发送脑电传输续传请求成功！", '', '']
-                        ret = ['1', REQmsg[1], f"发送脑电续传传输请求成功！！", filemsg]
-                        return msgtip, ret
-
-                    else:
-                        filemsg = self.appUtil.packageMsg('wrongSite')
-                        msgtip = [account, f"发送脑电传输请求失败，文件上传地址和数据库内mac地址不符！！", '', '']
-                        ret = ['1', REQmsg[1], f"发送脑电传输请求失败，文件上传地址和数据库内mac地址不符！", filemsg]
-                        return msgtip, ret
-                else:
-                    filemsg = self.appUtil.packageMsg('wrongServer')
-                    msgtip = [account, f"服务端不存在该条脑电数据记录", '', '']
-                    ret = ['1', REQmsg[1], f"服务端不存在该条脑电数据记录", filemsg]
-                    return msgtip, ret
-
-            else:
-                msgtip = [account, f"服务端处理不了该脑电上传状态！！", '', '']
-                ret = ['1', REQmsg[1], f"服务端处理不了该脑电上传状态！！", filemsg]
-                return msgtip, ret
+            print("writeEEG里的REQmSG:",REQmsg)
+            msgtip,ret = self.EEGUploadService.writeEEG(REQmsg)
+            print("EEGUpload返回的信息：{msgtip}---{ret}",msgtip,ret)
+            return msgtip,ret
         except Exception as e:
-            print('writeEEG', e)
-            account = REQmsg[3][0]
-            msgtip = [account, f"脑电文件上传出错:{e}！！", '', '']
-            ret = ['0', REQmsg[1], f"脑电文件上传出错:{e}！！", None]
-            return msgtip, ret
+            print("writeEEG",e)
 
-        # 根据传入参数更新数据库脑电检查信息
-
+    # 根据传入参数更新数据库脑电检查信息
     def updateCheckInfo(self, REQmsg):
         try:
             account = REQmsg[3][0]
@@ -1967,7 +1777,7 @@ class server(socketServer):
                 result = self.dbUtil.update_checkInfo(checkInfo)
                 if result:
                     check_id = checkInfo[0]
-                    result = self.dbUtil.del_fileInfo(check_id=check_id, file_id='notUploaded')
+                    result = self.dbUtil.del_fileInfo(check_id=check_id, state='notUploaded')
                     if result:
                         msgtip = [account, f"修改脑电检查信息并删除多余file_info信息成功", '', '']
                         ret = ['1', REQmsg[1], f"修改脑电检查信息并删除多余file_info信息成功", checkInfo]
@@ -1993,7 +1803,6 @@ class server(socketServer):
 
     def getFileInfo(self, REQmsg):
         try:
-            # print('getTypeInfo')
             account = REQmsg[3][0]
             uid = REQmsg[3][1]
             value = REQmsg[3][2]
@@ -2013,6 +1822,28 @@ class server(socketServer):
             msgtip = [account, f"查询脑电数据信息失败:{e}", '', '']
             ret = ['0', REQmsg[1], f"查询脑电数据信息失败:{e}", None]
             return msgtip, ret
+
+    def delFileInfo(self,REQmsg):
+        print('delFileInfo:', REQmsg)
+        try:
+            account = REQmsg[3][0]
+            check_id = REQmsg[3][1]
+            file_id = REQmsg[3][2]
+            rt = self.dbUtil.del_fileInfo(check_id=check_id, state='', file_id=file_id, flag='')
+            if rt:
+                msgtip = [account, "删除脑电文件信息成功或无对应信息需要删除",'','']
+                ret = ['1',REQmsg[1],"删除脑电文件信息成功或无对应信息需要删除",None]
+                return msgtip, ret
+            else:
+                msgtip = [account, "删除脑电文件信息失败", '', '']
+                ret = ['0', REQmsg[1], "删除脑电文件信息失败", None]
+                return msgtip, ret
+
+        except Exception as e:
+            msgtip = [account, f"删除脑电文件信息失败{e}", '', '']
+            ret = ['0', REQmsg[1], f"删除脑电文件信息失败{e}", None]
+            return msgtip, ret
+            print('delFileInfo', e)
 
 
     def getChoosePatientInfo(self, REQmsg):
@@ -3956,8 +3787,12 @@ class server(socketServer):
                         stuids += str(dInfo[1])
                     else:
                         stuids += "," + str(dInfo[1])
-                qr, qnum = self.dbUtil.da_get_resultNumByClass(class_id, stuids)
-                ar, anum = self.dbUtil.da_get_resultAnswerTrueNumByClass(class_id, stuids)
+                if stuids != "":
+                    qr, qnum = self.dbUtil.da_get_resultNumByClass(class_id, stuids)
+                    ar, anum = self.dbUtil.da_get_resultAnswerTrueNumByClass(class_id, stuids)
+                else:
+                    qr='0'
+                    ar='0'
                 if qr == '0':
                     qnum = None
                 if ar == '0':
@@ -5050,8 +4885,7 @@ class server(socketServer):
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}手动标注", '未定义命令', '', '']
         return msgtip, ret
 
-        # 标注诊断/读取脑电文件数据块
-
+    # 标注诊断/读取脑电文件数据块
     def load_dataDynamical(self, clientAddr, REQmsg, curUser):
         if REQmsg[1] == 9 or REQmsg[1] == 10:
             check_id = REQmsg[3][0]
@@ -5067,6 +4901,24 @@ class server(socketServer):
             REQdata = REQmsg[3][2]
             ret_data = self.appUtil.readEEGfile(raw, _index_channels, REQdata[1], REQdata[2])
             self.appUtil.closeEEGfile(raw)
+
+            if ret_data[0] == '0':
+                msgtip = [REQmsg[2], f"应答{REQmsg[0]}读数据块", '打开文件Raw为空', ""]
+                ret = ['0', REQmsg[1], '打开文件Raw为空']
+            else:
+                ret = ['1', REQmsg[1], REQdata[0], ret_data[1], ret_data[2]]
+                msgtip = [REQmsg[2], f"应答{REQmsg[0]}读数据块", '成功', ""]
+        return msgtip, ret
+
+    # 测试readEEG(),启用readEEG时可以将当前函数名与上述函数名替换
+    def load_dataDynamicalXXX(self, clientAddr, REQmsg, curUser):
+        if REQmsg[1] == 9 or REQmsg[1] == 10:
+            check_id = REQmsg[3][0]
+            file_id = REQmsg[3][1]
+            REQdata = REQmsg[3][2]
+            t_min = REQdata[1]
+            t_max = REQdata[2]
+            ret_data = self.appUtil.readEEG(check_id,file_id,t_min,t_max)
 
             if ret_data[0] == '0':
                 msgtip = [REQmsg[2], f"应答{REQmsg[0]}读数据块", '打开文件Raw为空', ""]
@@ -6317,8 +6169,19 @@ class server(socketServer):
                         return msgtip, ret
                     else:
                         block_id = REQmsg[3][5]
-                        if d_block_id + 1 == block_id:
-                            self.appUtil.addAlgorithmFile(file_name, data)
+                        path = os.path.join(self.appUtil.root_path, 'server_root', 'classifier', 'algorithms\\')
+                        file_name = file_name + '.py'
+                        file_path = os.path.join(path, file_name)
+                        if d_block_id + 1 == block_id and block_id == 1:
+                            self.makeFileName1(file_path)
+                            self.appUtil.writeByte(file_path, data)
+                            self.dbUtil.updateAlgorithmInfo(alg_info=['uploading', block_id], alg_id=alg_id, flag=flag)
+                            msgtip = [REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功", '', '']
+                            ret = ['1', REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功",
+                                   ['waiting', alg_id, file_state, block_id + 1]]
+                            return msgtip, ret
+                        elif d_block_id + 1 == block_id:
+                            self.appUtil.writeByte(file_path, data)
                             self.dbUtil.updateAlgorithmInfo(alg_info=['uploading', block_id], alg_id=alg_id, flag=flag)
                             msgtip = [REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功", '', '']
                             ret = ['1', REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功",
@@ -6501,6 +6364,10 @@ class server(socketServer):
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', "", '']
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}数据库操作不成功"]
             return msgtip, ret
+
+    def makeFileName1(self, file_path):
+        with open(file_path, 'w') as file:
+            pass
 
     def getAlgorithmFileName(self, macAddr, REQmsg):
         try:
