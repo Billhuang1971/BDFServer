@@ -178,6 +178,10 @@ class server(socketServer):
             elif cmd == 'dataImport' and cmdID == 7:
                 tipmsg, ret = self.getFileInfo(REQmsg)
                 REQmsg[3] = ret
+            # 删除脑电检查文件
+            elif cmd == 'dataImport' and cmdID == 11:
+                tipmsg, ret = self.delFileInfo(REQmsg)
+                REQmsg[3] = ret
             # 获取病人详细信息
             elif cmd == 'dataImport' and cmdID == 8:
                 tipmsg, ret = self.getChoosePatientInfo(REQmsg)
@@ -1767,7 +1771,7 @@ class server(socketServer):
                 result = self.dbUtil.update_checkInfo(checkInfo)
                 if result:
                     check_id = checkInfo[0]
-                    result = self.dbUtil.del_fileInfo(check_id=check_id, file_id='notUploaded')
+                    result = self.dbUtil.del_fileInfo(check_id=check_id, state='notUploaded')
                     if result:
                         msgtip = [account, f"修改脑电检查信息并删除多余file_info信息成功", '', '']
                         ret = ['1', REQmsg[1], f"修改脑电检查信息并删除多余file_info信息成功", checkInfo]
@@ -1793,7 +1797,6 @@ class server(socketServer):
 
     def getFileInfo(self, REQmsg):
         try:
-            # print('getTypeInfo')
             account = REQmsg[3][0]
             uid = REQmsg[3][1]
             value = REQmsg[3][2]
@@ -1813,6 +1816,25 @@ class server(socketServer):
             msgtip = [account, f"查询脑电数据信息失败:{e}", '', '']
             ret = ['0', REQmsg[1], f"查询脑电数据信息失败:{e}", None]
             return msgtip, ret
+
+    def delFileInfo(self,REQmsg):
+        print('delFileInfo:', REQmsg)
+        try:
+            account = REQmsg[2]
+            check_id = REQmsg[3][0]
+            file_id = REQmsg[3][1]
+            rt = self.dbUtil.del_fileInfo(check_id=check_id, state='', file_id=file_id, flag='1')
+            if rt:
+                msgtip = [account, "删除脑电文件信息成功",'','']
+                ret = ['1',REQmsg[1],"删除脑电文件信息成功",None]
+                return msgtip, ret
+            else:
+                msgtip = [account, "除脑电文件信息失败", '', '']
+                ret = ['0', REQmsg[1], "除脑电文件信息失败", None]
+                return msgtip, ret
+
+        except Exception as e:
+                print('delFileInfo', e)
 
 
     def getChoosePatientInfo(self, REQmsg):
@@ -4855,7 +4877,7 @@ class server(socketServer):
         return msgtip, ret
 
     # 标注诊断/读取脑电文件数据块
-    def load_dataDynamica(self, clientAddr, REQmsg, curUser):
+    def load_dataDynamical(self, clientAddr, REQmsg, curUser):
         if REQmsg[1] == 9 or REQmsg[1] == 10:
             check_id = REQmsg[3][0]
             file_id = REQmsg[3][1]
@@ -6142,7 +6164,7 @@ class server(socketServer):
                         file_name = file_name + '.py'
                         file_path = os.path.join(path, file_name)
                         if d_block_id + 1 == block_id and block_id == 1:
-                            self.makeFileName(file_path)
+                            self.makeFileName1(file_path)
                             self.appUtil.writeByte(file_path, data)
                             self.dbUtil.updateAlgorithmInfo(alg_info=['uploading', block_id], alg_id=alg_id, flag=flag)
                             msgtip = [REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功", '', '']
@@ -6334,7 +6356,7 @@ class server(socketServer):
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}数据库操作不成功"]
             return msgtip, ret
 
-    def makeFileName(self, file_path):
+    def makeFileName1(self, file_path):
         with open(file_path, 'w') as file:
             pass
 
