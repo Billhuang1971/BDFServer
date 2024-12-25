@@ -1820,21 +1820,24 @@ class server(socketServer):
     def delFileInfo(self,REQmsg):
         print('delFileInfo:', REQmsg)
         try:
-            account = REQmsg[2]
-            check_id = REQmsg[3][0]
-            file_id = REQmsg[3][1]
-            rt = self.dbUtil.del_fileInfo(check_id=check_id, state='', file_id=file_id, flag='1')
+            account = REQmsg[3][0]
+            check_id = REQmsg[3][1]
+            file_id = REQmsg[3][2]
+            rt = self.dbUtil.del_fileInfo(check_id=check_id, state='', file_id=file_id, flag='')
             if rt:
-                msgtip = [account, "删除脑电文件信息成功",'','']
-                ret = ['1',REQmsg[1],"删除脑电文件信息成功",None]
+                msgtip = [account, "删除脑电文件信息成功或无对应信息需要删除",'','']
+                ret = ['1',REQmsg[1],"删除脑电文件信息成功或无对应信息需要删除",None]
                 return msgtip, ret
             else:
-                msgtip = [account, "除脑电文件信息失败", '', '']
-                ret = ['0', REQmsg[1], "除脑电文件信息失败", None]
+                msgtip = [account, "删除脑电文件信息失败", '', '']
+                ret = ['0', REQmsg[1], "删除脑电文件信息失败", None]
                 return msgtip, ret
 
         except Exception as e:
-                print('delFileInfo', e)
+            msgtip = [account, f"删除脑电文件信息失败{e}", '', '']
+            ret = ['0', REQmsg[1], f"删除脑电文件信息失败{e}", None]
+            return msgtip, ret
+            print('delFileInfo', e)
 
 
     def getChoosePatientInfo(self, REQmsg):
