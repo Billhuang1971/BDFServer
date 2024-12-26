@@ -4,7 +4,7 @@ import threading
 
 class EEGUpload(object):
     def __init__(self, dbUtil, appUtil):
-        self.root_path = os.path.join(os.path.dirname(__file__))[:-14]
+        self.root_path = os.path.dirname(os.path.dirname(__file__))+'\\'
         # 用来保存文件每次传的块大小(5M)
         self.block_size = 5 * 1024 * 1024
         # 用来保存当前上传脑电文件的路径
@@ -126,7 +126,7 @@ class EEGUpload(object):
     def makeFile(self,check_id,file_id):
         # 判断目录是否存在
         dirname = str(check_id).rjust(11, '0')
-        path = os.path.join(self.root_path, 'BDFServer\data', 'formated_data', dirname)
+        path = os.path.join(self.root_path, 'data', 'formated_data', dirname)
         print("写入的脑电文件名称是：", path)
         filename = str(file_id).rjust(3, '0') + '.bdf'
         # 如果目录不存在，创建目录

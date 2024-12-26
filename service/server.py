@@ -6169,7 +6169,7 @@ class server(socketServer):
                         return msgtip, ret
                     else:
                         block_id = REQmsg[3][5]
-                        path = os.path.join(self.appUtil.root_path, 'server_root', 'classifier', 'algorithms\\')
+                        path = os.path.join(self.appUtil.root_path, 'classifier', 'algorithms\\')
                         file_name = file_name + '.py'
                         file_path = os.path.join(path, file_name)
                         if d_block_id + 1 == block_id and block_id == 1:
@@ -6618,7 +6618,7 @@ class server(socketServer):
 
     def getTrainPerformance(self, macAddr, REQmsg):
         try:
-            path = os.path.join(self.appUtil.root_path, 'server_root', 'classifier', 'result', 'train_acc.pkl')
+            path = os.path.join(self.appUtil.root_path, 'classifier', 'result', 'train_acc.pkl')
             f = open(path, 'rb')
             performance = pickle.load(f)
             msgtip = [REQmsg[1], f"获取训练性能成功", '', '']
@@ -6824,7 +6824,7 @@ class server(socketServer):
 
     def check_algorithm_running_result(self):
         try:
-            path = os.path.join(self.appUtil.root_path, 'server_root/classifier/algorithms', 'result.pkl')
+            path = os.path.join(self.appUtil.root_path, 'classifier/algorithms', 'result.pkl')
             f = open(path, 'rb')
             self.result = pickle.load(f)
             f.close()
@@ -6840,7 +6840,7 @@ class server(socketServer):
 
     def train_performance_set(self, list):
         try:
-            train_performance_path = os.path.join(self.appUtil.root_path, 'server_root', 'classifier', 'algorithms',
+            train_performance_path = os.path.join(self.appUtil.root_path, 'classifier', 'algorithms',
                                                   'train_performance.pkl')
             f = open(train_performance_path, 'rb')
             train_performance = pickle.load(f)
@@ -6974,7 +6974,7 @@ class server(socketServer):
             else:
                 if cls_state != 'ready':
                     row = REQmsg[3][1]
-                    modal_path = os.path.join(self.appUtil.root_path, 'server_root/classifier', 'models')
+                    modal_path = os.path.join(self.appUtil.root_path, 'classifier', 'models')
                     file_path = os.path.join(modal_path, classifier_info[0][4])
                     try:
                         os.remove(file_path)
@@ -7062,7 +7062,7 @@ class server(socketServer):
     def cls_restate(self, macAddr, REQmsg):
         try:
             cls_id=REQmsg[3][0]
-            modal_path = os.path.join(self.appUtil.root_path, 'server_root/classifier', 'models')
+            modal_path = os.path.join(self.appUtil.root_path, 'classifier', 'models')
             filename=self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_id)
             file_path = os.path.join(modal_path, filename[0][4])
             os.remove(file_path)
@@ -7506,7 +7506,7 @@ class server(socketServer):
         try:
             check_id = REQmsg[3][0]
             check_number = str(check_id).zfill(11)
-            path = os.path.join(self.appUtil.root_path, 'server_root', 'data', 'formated_data')
+            path = os.path.join(self.appUtil.root_path, 'data', 'formated_data')
             file_id = self.dbUtil.get_patient_file(check_id)
             pre_info = []
             pre_info_file_size = []
@@ -7684,7 +7684,7 @@ class server(socketServer):
     def get_filepath_by_name(self, check_id, file_name):
         try:
             check_number = str(check_id).zfill(11)
-            path = os.path.join(self.appUtil.root_path, 'server_root', 'data', 'formated_data')
+            path = os.path.join(self.appUtil.root_path, 'data', 'formated_data')
             file_path = os.path.join(path, check_number, file_name)
             return file_path
         except Exception as e:
