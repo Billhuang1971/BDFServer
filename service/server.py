@@ -178,6 +178,10 @@ class server(socketServer):
             elif cmd == 'dataImport' and cmdID == 7:
                 tipmsg, ret = self.getFileInfo(REQmsg)
                 REQmsg[3] = ret
+            # 删除脑电检查文件
+            elif cmd == 'dataImport' and cmdID == 11:
+                tipmsg, ret = self.delFileInfo(REQmsg)
+                REQmsg[3] = ret
             # 获取病人详细信息
             elif cmd == 'dataImport' and cmdID == 8:
                 tipmsg, ret = self.getChoosePatientInfo(REQmsg)
@@ -953,7 +957,7 @@ class server(socketServer):
                 tipmsg, ret = self.checkClassifierInfo(macAddr, REQmsg)
                 REQmsg[3] = ret
             elif cmd == 'classifier' and cmdID == 6:
-                tipmsg, ret = self.add_import_classifierInfo(macAddr, REQmsg)
+                tipmsg, ret = self.cls_restate(macAddr, REQmsg)
                 REQmsg[3] = ret
             elif cmd == 'classifier' and cmdID == 7:
                 tipmsg, ret = self.checkstate(macAddr, REQmsg)
@@ -984,6 +988,12 @@ class server(socketServer):
                 REQmsg[3] = ret
             elif cmd == 'classifier' and cmdID == 16:
                 tipmsg, ret = self.classifierPaging_set(cmdID, REQmsg)
+                REQmsg[3] = ret
+            elif cmd == 'classifier' and cmdID == 17:
+                tipmsg, ret = self.upload_scheme(macAddr, REQmsg)
+                REQmsg[3] = ret
+            elif cmd == 'classifier' and cmdID == 18:
+                tipmsg, ret = self.upload_model(cmdID, REQmsg)
                 REQmsg[3] = ret
 
             # 模型训练
@@ -1767,7 +1777,7 @@ class server(socketServer):
                 result = self.dbUtil.update_checkInfo(checkInfo)
                 if result:
                     check_id = checkInfo[0]
-                    result = self.dbUtil.del_fileInfo(check_id=check_id, file_id='notUploaded')
+                    result = self.dbUtil.del_fileInfo(check_id=check_id, state='notUploaded')
                     if result:
                         msgtip = [account, f"修改脑电检查信息并删除多余file_info信息成功", '', '']
                         ret = ['1', REQmsg[1], f"修改脑电检查信息并删除多余file_info信息成功", checkInfo]
@@ -1793,7 +1803,6 @@ class server(socketServer):
 
     def getFileInfo(self, REQmsg):
         try:
-            # print('getTypeInfo')
             account = REQmsg[3][0]
             uid = REQmsg[3][1]
             value = REQmsg[3][2]
@@ -1813,6 +1822,28 @@ class server(socketServer):
             msgtip = [account, f"查询脑电数据信息失败:{e}", '', '']
             ret = ['0', REQmsg[1], f"查询脑电数据信息失败:{e}", None]
             return msgtip, ret
+
+    def delFileInfo(self,REQmsg):
+        print('delFileInfo:', REQmsg)
+        try:
+            account = REQmsg[3][0]
+            check_id = REQmsg[3][1]
+            file_id = REQmsg[3][2]
+            rt = self.dbUtil.del_fileInfo(check_id=check_id, state='', file_id=file_id, flag='')
+            if rt:
+                msgtip = [account, "删除脑电文件信息成功或无对应信息需要删除",'','']
+                ret = ['1',REQmsg[1],"删除脑电文件信息成功或无对应信息需要删除",None]
+                return msgtip, ret
+            else:
+                msgtip = [account, "删除脑电文件信息失败", '', '']
+                ret = ['0', REQmsg[1], "删除脑电文件信息失败", None]
+                return msgtip, ret
+
+        except Exception as e:
+            msgtip = [account, f"删除脑电文件信息失败{e}", '', '']
+            ret = ['0', REQmsg[1], f"删除脑电文件信息失败{e}", None]
+            return msgtip, ret
+            print('delFileInfo', e)
 
 
     def getChoosePatientInfo(self, REQmsg):
@@ -4855,7 +4886,7 @@ class server(socketServer):
         return msgtip, ret
 
     # 标注诊断/读取脑电文件数据块
-    def load_dataDynamica(self, clientAddr, REQmsg, curUser):
+    def load_dataDynamical(self, clientAddr, REQmsg, curUser):
         if REQmsg[1] == 9 or REQmsg[1] == 10:
             check_id = REQmsg[3][0]
             file_id = REQmsg[3][1]
@@ -6138,11 +6169,11 @@ class server(socketServer):
                         return msgtip, ret
                     else:
                         block_id = REQmsg[3][5]
-                        path = os.path.join(self.appUtil.root_path, 'server_root', 'classifier', 'algorithms\\')
+                        path = os.path.join(self.appUtil.root_path, 'classifier', 'algorithms\\')
                         file_name = file_name + '.py'
                         file_path = os.path.join(path, file_name)
                         if d_block_id + 1 == block_id and block_id == 1:
-                            self.makeFileName(file_path)
+                            self.makeFileName1(file_path)
                             self.appUtil.writeByte(file_path, data)
                             self.dbUtil.updateAlgorithmInfo(alg_info=['uploading', block_id], alg_id=alg_id, flag=flag)
                             msgtip = [REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功", '', '']
@@ -6334,7 +6365,7 @@ class server(socketServer):
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}数据库操作不成功"]
             return msgtip, ret
 
-    def makeFileName(self, file_path):
+    def makeFileName1(self, file_path):
         with open(file_path, 'w') as file:
             pass
 
@@ -6587,7 +6618,7 @@ class server(socketServer):
 
     def getTrainPerformance(self, macAddr, REQmsg):
         try:
-            path = os.path.join(self.appUtil.root_path, 'server_root', 'classifier', 'result', 'train_acc.pkl')
+            path = os.path.join(self.appUtil.root_path, 'classifier', 'result', 'train_acc.pkl')
             f = open(path, 'rb')
             performance = pickle.load(f)
             msgtip = [REQmsg[1], f"获取训练性能成功", '', '']
@@ -6793,7 +6824,7 @@ class server(socketServer):
 
     def check_algorithm_running_result(self):
         try:
-            path = os.path.join(self.appUtil.root_path, 'server_root/classifier/algorithms', 'result.pkl')
+            path = os.path.join(self.appUtil.root_path, 'classifier/algorithms', 'result.pkl')
             f = open(path, 'rb')
             self.result = pickle.load(f)
             f.close()
@@ -6809,7 +6840,7 @@ class server(socketServer):
 
     def train_performance_set(self, list):
         try:
-            train_performance_path = os.path.join(self.appUtil.root_path, 'server_root', 'classifier', 'algorithms',
+            train_performance_path = os.path.join(self.appUtil.root_path, 'classifier', 'algorithms',
                                                   'train_performance.pkl')
             f = open(train_performance_path, 'rb')
             train_performance = pickle.load(f)
@@ -6913,9 +6944,10 @@ class server(socketServer):
     def inquiryClassifierInfo(self, macAddr, REQmsg):
         try:
             key_word = REQmsg[3][0]
-            ket_value = REQmsg[3][1]
-            classifier_info = self.dbUtil.get_classifier_alg_set_name(where_name=key_word, where_value=ket_value,
-                                                                      fuzzy_search=True)
+            key_value = REQmsg[3][1]
+            key_state =REQmsg[3][4]
+            classifier_info = self.dbUtil.get_classifier_alg_set_name(where_name=key_word, where_value=key_value,
+                                                                      state_value=key_state,fuzzy_search=True)
             totalPage = ceil(len(classifier_info) / REQmsg[3][3])
             start = (REQmsg[3][2] - 1) * REQmsg[3][3]
             classifier_info = classifier_info[start:start + REQmsg[3][3]]
@@ -6931,18 +6963,18 @@ class server(socketServer):
     def delClassifierInfo(self, macAddr, REQmsg):
         try:
             cls_info = REQmsg[3][0]
-            flag=REQmsg[3][2]
-            _curPageIndex=REQmsg[3][3]
+            _curPageIndex=REQmsg[3][2]
             classifier_info = self.dbUtil.getclassifierInfo(where_name='classifier_name', where_value=cls_info[0])
+            cls_state=classifier_info[0][5]
             r, r1 = self.dbUtil.delClassifierInfo(where_name='classifier_name', where_value=classifier_info[0][1])
             if r == '0':
                 msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', classifier_info[0]]
                 ret = ['0', f"应答{REQmsg[0]}数据库操作不成功:{classifier_info[0]}"]
                 return msgtip, ret
             else:
-                if flag == 1:
+                if cls_state != 'ready':
                     row = REQmsg[3][1]
-                    modal_path = os.path.join(self.appUtil.root_path, 'server_root/classifier', 'models')
+                    modal_path = os.path.join(self.appUtil.root_path, 'classifier', 'models')
                     file_path = os.path.join(modal_path, classifier_info[0][4])
                     try:
                         os.remove(file_path)
@@ -7027,29 +7059,34 @@ class server(socketServer):
             return msgtip, ret
         except Exception as re:
             print('DataBaseUtil.checkClassifierInfo:', re)
-    def add_import_classifierInfo(self, macAddr, REQmsg):
+    def cls_restate(self, macAddr, REQmsg):
         try:
-            self.dbUtil.add_init_ClassifierInfo(classifier_name=REQmsg[3][0], alg_id=REQmsg[3][1],
-                                                set_id=REQmsg[3][2], filename=REQmsg[3][3],
-                                                state='ready', train_performance='',
-                                                test_performance=REQmsg[3][5],
-                                                epoch_length=REQmsg[3][4], config_id=REQmsg[3][6],
-                                                channels=REQmsg[3][7])
-            msgtip = [REQmsg[1], f"模型导入服务器", '', '']
+            cls_id=REQmsg[3][0]
+            modal_path = os.path.join(self.appUtil.root_path, 'classifier', 'models')
+            filename=self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_id)
+            file_path = os.path.join(modal_path, filename[0][4])
+            os.remove(file_path)
+            self.dbUtil.update_trans_ClassifierInfo(set_name='state', set_value='ready',
+                                                    where_name='classifier_id', where_value=cls_id)
+            self.dbUtil.update_trans_ClassifierInfo(set_name='filename', set_value='',
+                                                    where_name='classifier_id', where_value=cls_id)
+            self.dbUtil.update_trans_ClassifierInfo(set_name='block_id', set_value=0,
+                                                    where_name='classifier_id', where_value=cls_id)
+            msgtip = [REQmsg[1], f"协议7.1重置状态", '', '']
             ret = ['1', REQmsg[1], REQmsg[3]]
             return msgtip, ret
         except Exception as e:
-            print('add_import_classifierInfo', e)
+            print('cls_restate', e)
     def checkstate(self, macAddr, REQmsg):  # REQData[3]='classifier_name,alg_id,filename, epoch_length'
         try:
-            cls_info = REQmsg[3][0][0]
-            classifier_info = self.dbUtil.get_classifier_name_and_state(where_name='classifier_name', where_value=cls_info,
+            cls_info = REQmsg[3][0]
+            classifier_info = self.dbUtil.getClsRecord(where_name='classifier_name', where_value=cls_info,
                                                                         where_state='state', state='ready')
             msgtip = [REQmsg[1], f"查询模型记录和状态", '', '']
             ret = ['1', REQmsg[1], classifier_info]
             return msgtip, ret
         except Exception as e:
-            print('add_import_classifierInfo', e)
+            print('checkstate', e)
     def model_transmit_message(self, macAddr, REQmsg):
         try:
             if REQmsg[3][0] == 'start':  # 5.1
@@ -7077,15 +7114,11 @@ class server(socketServer):
             elif REQmsg[3][0] == 'uploading':  # 5.2
                 cls_info = REQmsg[3][1]  # “uploading，classifier_id,filename，block_id，数据块,mac”
                 cls_id_judge = self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_info)
-                cls_state_judge1 = self.dbUtil.getclassifierInfo(where_name='state', where_value='ready')
-                cls_state_judge2 = self.dbUtil.getclassifierInfo(where_name='state', where_value='built')
-                if cls_id_judge and not cls_state_judge1 and not cls_state_judge2:  # 满足d10.classifier_id=classifier_id且d10.state!=”ready”且d10.state!=”built”的记录
-                    if self.dbUtil.get_classifier_name_and_state(where_name='classifier_id', where_value=cls_info,
-                                                                 where_state='mac', state=REQmsg[3][5]):  # 判断mac是否相同
-                        if self.dbUtil.get_classifier_name_and_state(where_name='classifier_id', where_value=cls_info,
-                                                                     where_state='block_id',
-                                                                     state=(REQmsg[3][3] - 1)):  # 判断block_id=d10.block_id+1
+                if cls_id_judge and (cls_id_judge[0][5]!='ready') and (cls_id_judge[0][5]!='built'):  # 满足d10.classifier_id=classifier_id且d10.state!=”ready”且d10.state!=”built”的记录
+                    if cls_id_judge[0][7]==REQmsg[3][5]:
+                        if cls_id_judge[0][6]==(REQmsg[3][3] - 1):
                             if REQmsg[3][3] == 1:
+
                                 if os.path.exists(self.model_path + REQmsg[3][2]):
                                     os.remove(self.model_path + REQmsg[3][2])
                                 try:
@@ -7117,7 +7150,7 @@ class server(socketServer):
                             else:  # REQmsg[3][3]＞1
                                 try:
                                     with open(self.model_path + REQmsg[3][2], 'rb+') as file:
-                                        last_write_position = (REQmsg[3][3] - 1) * 5 * 1024 * 1024
+                                        last_write_position = (REQmsg[3][3] - 1) * 5 * 1024*1024
                                         file.seek(last_write_position)
                                         file.write(REQmsg[3][4])
                                     self.dbUtil.update_trans_ClassifierInfo(set_name='block_id', set_value=REQmsg[3][3],
@@ -7130,7 +7163,7 @@ class server(socketServer):
                                     temporary2 = REQmsg[3][:4] + REQmsg[3][5:]
                                     msgtip = [REQmsg[1], f"成功接收数据块{REQmsg[3][3]},接下来接收{n}", '', '']
                                     ret = ['1', REQmsg[1], ['waiting', n, temporary2]]
-                                    return msgtip, ret  # todo:传输数据块
+                                    return msgtip, ret
                                 except IOError:
                                     print("打开文件失败")
                                     os.remove(REQmsg[3][2])
@@ -7160,11 +7193,9 @@ class server(socketServer):
                     return msgtip, ret
             elif REQmsg[3][0] == 'uploaded':  # 5.3
                 cls_info = REQmsg[3][1]  # “uploaded,classifier_id,filename,block_id和本机mac地址”
-                if self.dbUtil.get_classifier_name_and_state(where_name='classifier_id', where_value=cls_info,
-                                                             where_state='mac', state=REQmsg[3][4]):  # 判断mac=d10.mac
+                if self.dbUtil.getClsRecord(where_name='classifier_id', where_value=cls_info,
+                                            where_state='mac', state=REQmsg[3][4]):  # 判断mac=d10.mac
                     self.dbUtil.update_trans_ClassifierInfo(set_name='state', set_value='uploaded',
-                                                            where_name='classifier_id', where_value=cls_info)
-                    self.dbUtil.update_trans_ClassifierInfo(set_name='test_performance', set_value='None',
                                                             where_name='classifier_id', where_value=cls_info)
                     msgtip = [REQmsg[1], f" uploaded1", '', '']
                     ret = ['1', REQmsg[1], ['uploaded']]
@@ -7174,23 +7205,19 @@ class server(socketServer):
                     ret = ['1', REQmsg[1], ['wrongSite']]
                     return msgtip, ret
             elif REQmsg[3][0] == 'clean' or REQmsg[3][0] == 'unknown':  # 5.4 or #5.6
-                cls_info = REQmsg[3][
-                    1]  # clean:“clean,classifier_id,filename，block_id,mac”  unknwn:“unknown,classifier_id,filename，mac”
-                if self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_info):
-                    if self.dbUtil.getclassifierInfo(where_name='mac', where_value=REQmsg[3][3]):  # 存在且mac=d10.mac
-                        if self.dbUtil.getclassifierInfo(where_name='state', where_value='ready'):
+                cls_info = REQmsg[3][1]  # clean:“clean,classifier_id,filename，block_id,mac”  unknwn:“unknown,classifier_id,filename，mac”
+                cls_id_judge = self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_info)
+                if cls_id_judge:
+                    if cls_id_judge[0][7]==REQmsg[3][3]:# 存在且mac=d10.mac
+                        if cls_id_judge[0][5]=='ready':
                             msgtip = [REQmsg[1], f"错误！状态有误", '', '']
                             ret = ['1', REQmsg[1], ['unknownError']]
                             return msgtip, ret
-                        elif self.dbUtil.getclassifierInfo(where_name='state',
-                                                           where_value='notUploaded') or self.dbUtil.getclassifierInfo(
-                                where_name='state', where_value='uploading'):
+                        elif cls_id_judge[0][5]=='notUploaded' or cls_id_judge[0][5]=='uploading':
                             msgtip = [REQmsg[1], f" RECOVER", '', '']
                             ret = ['1', REQmsg[1], ['recover', REQmsg[3][1], REQmsg[3][2], '', REQmsg[3][3]]]  # ''为冗余补充
                             return msgtip, ret
-                        elif self.dbUtil.getclassifierInfo(where_name='state', where_value='uploaded'):
-                            self.dbUtil.update_trans_ClassifierInfo(set_name='test_performance', set_value='None',
-                                                                    where_name='classifier_id', where_value=cls_info)
+                        elif cls_id_judge[0][5]=='uploaded':
                             msgtip = [REQmsg[1], f" uploaded2", '', '']
                             ret = ['1', REQmsg[1], ['uploaded']]
                             return msgtip, ret
@@ -7204,24 +7231,21 @@ class server(socketServer):
                     return msgtip, ret
             elif REQmsg[3][0] == 'continue':  # 5.5
                 cls_info = REQmsg[3][1]  # “continue,classifier_id,filename,mac”
-                if self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_info):
-                    if self.dbUtil.getclassifierInfo(where_name='mac', where_value=REQmsg[3][3]):  # 存在且mac=d10.mac
-                        if self.dbUtil.getclassifierInfo(where_name='state', where_value='ready'):
+                cls_id_judge = self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_info)
+                if cls_id_judge:
+                    if cls_id_judge[0][7]==REQmsg[3][3]:# 存在且mac=d10.mac
+                        if cls_id_judge[0][5]=='ready':
                             msgtip = [REQmsg[1], f"错误！状态有误", '', '']
                             ret = ['1', REQmsg[1], ['unknownError']]
                             return msgtip, ret
-                        elif self.dbUtil.getclassifierInfo(where_name='state',
-                                                           where_value='notUploaded') or self.dbUtil.getclassifierInfo(
-                                where_name='state', where_value='uploading'):
+                        elif cls_id_judge[0][5]=='notUploaded' or cls_id_judge[0][5]=='uploading':
                             cls_tempt = self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_info)
                             n = cls_tempt[0][6] + 1
                             REQmsg[3].insert(-1, n)
                             msgtip = [REQmsg[1], f" waiting #5.5", '', '']
                             ret = ['1', REQmsg[1], ['waiting', n, REQmsg[3]]]
                             return msgtip, ret
-                        elif self.dbUtil.getclassifierInfo(where_name='state', where_value='uploaded'):
-                            self.dbUtil.update_trans_ClassifierInfo(set_name='test_performance', set_value='None',
-                                                                    where_name='classifier_id', where_value=cls_info)
+                        elif cls_id_judge[0][5]=='uploaded':
                             msgtip = [REQmsg[1], f" uploaded3", '', '']
                             ret = ['1', REQmsg[1], ['uploaded']]
                             return msgtip, ret
@@ -7294,7 +7318,7 @@ class server(socketServer):
             return msgtip, ret
         except Exception as e:
             print('inquiryAlgorithmInfo', e)
-            msgtip = [REQmsg[0], f"获取查询模型信息", '', '']
+            msgtip = [REQmsg[0], f"获取查询算法信息", '', '']
             ret = ['0', REQmsg[0], e]
             return msgtip, ret
     def getClassifier_config(self, cmdID, config):
@@ -7371,6 +7395,69 @@ class server(socketServer):
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', "", '']
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}数据库操作不成功"]
             return msgtip, ret
+
+    def upload_scheme(self,macAddr,REQmsg):
+        try:
+            cls_info = REQmsg[3][0]
+            classifier_info = self.dbUtil.getclassifierInfo(where_name='classifier_name', where_value=cls_info)
+            if classifier_info:
+                msgtip = [REQmsg[1], f"模型名字重复", '', '']
+                ret = ['0', REQmsg[1], classifier_info]
+                return msgtip, ret
+            else:
+                self.dbUtil.add_init_ClassifierInfo(classifier_name=REQmsg[3][0], alg_id=REQmsg[3][1],
+                                                    set_id=REQmsg[3][2], filename='',
+                                                    state='ready', train_performance='',
+                                                    test_performance='',
+                                                    epoch_length=REQmsg[3][3], config_id=REQmsg[3][4],
+                                                    channels=REQmsg[3][5],mac=macAddr,classifierUnit=REQmsg[3][6])
+                msgtip = [REQmsg[1], f"保存模型", '', '']
+                ret = ['1', REQmsg[1], REQmsg[3]]
+                return msgtip, ret
+        except Exception as re:
+            print('DataBaseUtil.checkClassifierInfo:', re)
+    def upload_model(self,cmdID,REQmsg):
+        try:
+            cls_name=REQmsg[3][0][0]
+            classifier_info = self.dbUtil.getclassifierInfo(where_name='classifier_name', where_value=cls_name)
+            file_name='classifier00000'+str(classifier_info[0][0])+'.'+str(REQmsg[3][1])
+            type=REQmsg[3][2]
+            nb_class=REQmsg[3][3]
+            sample_lenth=REQmsg[3][4]
+            if classifier_info[0][5]=='ready':
+                alg_id=classifier_info[0][2]#set_id
+                alg_info=self.dbUtil.get_al_setInfo(where_name='alg_id',where_value=alg_id)
+                flag=self.modelmatch(alg_info,type,nb_class,sample_lenth)
+                if flag==True:
+                    self.dbUtil.add_init_ClassifierInfo(classifier_name=cls_name, filename=file_name)
+
+
+                    msgtip = [REQmsg[1], f"模型准备上传", '', '']
+                    ret = ['1', cls_name]
+                    print(ret)
+                    return msgtip, ret
+                else:
+                    msgtip = [REQmsg[1], f"模型匹配失败", '', '']
+                    ret = ['2', cls_name]
+                    return msgtip, ret
+            else:
+                msgtip = [REQmsg[1], f"选择的模型不是准备上传状态", '', '']
+                ret = ['0', cls_name]
+                return msgtip, ret
+        except Exception as re:
+            print('DataBaseUtil.checkClassifierInfo:', re)
+    def modelmatch(self,alg_info,type,nb_class,sample_lenth):
+        if (alg_info[0][17] == 'waveform' and type != 'wave'):
+            return False
+        if (alg_info[0][17] == 'state' and type != 'state'):
+            return False
+        algPara = json.loads(alg_info[0][3])
+        if nb_class != algPara['nb_class']:
+            return False
+        if sample_lenth!=algPara['sample_len']:
+            return False
+        return True
+
     # 脑电扫描
     def getAutoInitData(self, macAddr, REQmsg):
         try:
@@ -7419,7 +7506,7 @@ class server(socketServer):
         try:
             check_id = REQmsg[3][0]
             check_number = str(check_id).zfill(11)
-            path = os.path.join(self.appUtil.root_path, 'server_root', 'data', 'formated_data')
+            path = os.path.join(self.appUtil.root_path, 'data', 'formated_data')
             file_id = self.dbUtil.get_patient_file(check_id)
             pre_info = []
             pre_info_file_size = []
@@ -7597,7 +7684,7 @@ class server(socketServer):
     def get_filepath_by_name(self, check_id, file_name):
         try:
             check_number = str(check_id).zfill(11)
-            path = os.path.join(self.appUtil.root_path, 'server_root', 'data', 'formated_data')
+            path = os.path.join(self.appUtil.root_path, 'data', 'formated_data')
             file_path = os.path.join(path, check_number, file_name)
             return file_path
         except Exception as e:

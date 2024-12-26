@@ -97,8 +97,8 @@ class trainAlg(algObject):
             self.readTrainingSet(set_id)
             self.train_performance = None
             self.sample_len = None
-            path = os.path.join(os.path.dirname(__file__))[:-15]
-            self.set_path = os.path.join(path, 'BDFServer\\', 'classifier\\', 'algorithms\\', 'set.pkl')
+            path = os.path.dirname(os.path.dirname(__file__))+'\\'
+            self.set_path = os.path.join(path, 'classifier\\', 'algorithms\\', 'set.pkl')
 
         except Exception as e:
             print('trainAlg__init__:', e)
@@ -111,38 +111,38 @@ class trainAlg(algObject):
         try:
             set_info = self.dbUtil.get_set_info(where_name='set_id', where_value=set_id)[0]
             Filename = set_info[4] + '.npz'
-            path = os.path.join(os.path.dirname(__file__))[:-15]
-            self.trainingSetFilename = os.path.join(path, 'BDFServer\\', 'data\\', 'train_set\\', Filename)
+            path = os.path.dirname(os.path.dirname(__file__))+'\\'
+            self.trainingSetFilename = os.path.join(path, 'data\\', 'train_set\\', Filename)
             self.setDescription = json.loads(set_info[3])
         except Exception as e:
             print('readTrainingSet', e)
 
     def match(self):
         try:
-            set_type = self.setDescription['type']
-            if set_type == 'wave' and self.algType != 'waveform':
+            set_type = self.setDescription['type'] #数据集的description
+            if set_type == 'wave' and self.algType != 'waveform': #算法和数据集类型匹配
                 return False
             if set_type == 'state' and self.algType != 'state':
                 return False
-            nb_class = self.algPara['nb_class']
+            nb_class = self.algPara['nb_class']# alg 表中trainning_para
             content = self.setDescription['content']
             temp = []
             for i in content:
-                temp.append(i[0])
+                temp.append(i[0])#添加typeID
             self.set_temp = set(temp)
             self.set_class = len(self.set_temp)
             if self.setDescription['scheme'] != '':
                 self.set_class = self.set_class + 1
-            if nb_class != self.set_class:
+            if nb_class != self.set_class: #检查分类数目  算法是否等于数据集
                 return False
             sample_len = self.algPara['sample_len']
             if sample_len != '':
-                if not self.setDescription['span'] == sample_len:
+                if not self.setDescription['span'] == sample_len: #判断span是否等于samplelen
                     return False
             set_info = {'set_temp': self.set_temp, 'set_class': self.set_class}
             self.save_set_info(set_info)
-            path = os.path.join(os.path.dirname(__file__))[:-15]
-            self.modelFileName = os.path.join(path, 'BDFServer\\', 'classifier\\', 'models\\',
+            path = os.path.dirname(os.path.dirname(__file__))+'\\'
+            self.modelFileName = os.path.join(path, 'classifier\\', 'models\\',
                                               self.algName + str(self.set_id) + '.pth')
             self.classifierName = self.algName + str(self.set_id)
             return True
@@ -227,8 +227,8 @@ class trainAlg(algObject):
         alg_name = alg_info[2]
         self.algPara = json.loads(alg_info[3])
         self.algType = alg_info[17]
-        path = os.path.join(os.path.dirname(__file__))[:-15]
-        self.algFileName = os.path.join(path, 'BDFServer\\', 'classifier\\', 'algorithms\\', alg_name + '.py')
+        path = os.path.dirname(os.path.dirname(__file__))+'\\'
+        self.algFileName = os.path.join(path, 'classifier\\', 'algorithms\\', alg_name + '.py')
 
     def get_classifier_sample_length(self, sampling_rate, set_info):
         try:
@@ -281,11 +281,11 @@ class predictAlg(algObject):
             self.sample_len = classifier_info[10]
             self.modelUnit = classifier_info[12]
             self.classifierName = classifier_info[1]
-            my_path = os.path.join(os.path.dirname(__file__))[:-15]
-            self.modelFileName = os.path.join(my_path, 'BDFServer\\', 'classifier\\', 'models\\', classifier_info[4])
-            self.scan_result_filepath = os.path.join(my_path, 'BDFServer\\', 'classifier\\', 'algorithms\\',
+            my_path = os.path.dirname(os.path.dirname(__file__))+'\\'
+            self.modelFileName = os.path.join(my_path, 'classifier\\', 'models\\', classifier_info[4])
+            self.scan_result_filepath = os.path.join(my_path, 'classifier\\', 'algorithms\\',
                                                      'predict.pkl')
-            path = os.path.join(my_path, 'server_root', 'data', 'formated_data')
+            path = os.path.join(my_path, 'data', 'formated_data')
             check_number = str(self.check_id).zfill(11)
             file_name = "{:>03}.edf".format(self.file_id)
             self.eegFileName = os.path.join(path, check_number, file_name)
@@ -333,8 +333,8 @@ class predictAlg(algObject):
             alg_name = alg_info[12]
             self.algPara = alg_info[13]
             self.algType = alg_info[17]
-            path = os.path.join(os.path.dirname(__file__))[:-15]
-            self.algFileName = os.path.join(path, 'BDFServer\\', 'classifier\\', 'algorithms\\', alg_name + '.py')
+            path = os.path.dirname(os.path.dirname(__file__))+'\\'
+            self.algFileName = os.path.join(path, 'classifier\\', 'algorithms\\', alg_name + '.py')
         except Exception as e:
             print('readAlgFile', e)
 
@@ -424,8 +424,8 @@ class testAlg(algObject):
             self.classifierName = classifier_info[1]
             self.readAlgFile(classifier_info[2])
             self.readTestingSet(classifier_info[3])
-            my_path = os.path.join(os.path.dirname(__file__))[:-15]
-            self.modelFileName = os.path.join(my_path, 'BDFServer\\', 'classifier\\', 'models\\', classifier_info[4])
+            my_path = os.path.dirname(os.path.dirname(__file__))+'\\'
+            self.modelFileName = os.path.join(my_path, 'classifier\\', 'models\\', classifier_info[4])
         except Exception as e:
             print('testAlg__init__:', e)
 
@@ -449,8 +449,8 @@ class testAlg(algObject):
             alg_name = alg_info[7]
             self.algPara = alg_info[8]
             self.algType = alg_info[17]
-            path = os.path.join(os.path.dirname(__file__))[:-15]
-            self.algFileName = os.path.join(path, 'BDFServer\\', 'classifier\\', 'algorithms\\', alg_name + '.py')
+            path = os.path.dirname(os.path.dirname(__file__))+'\\'
+            self.algFileName = os.path.join(path, 'classifier\\', 'algorithms\\', alg_name + '.py')
         except Exception as e:
             print('readAlgFile', e)
 
@@ -502,8 +502,8 @@ class testAlg(algObject):
         try:
             set_info = self.dbUtil.get_set_info(where_name='set_id', where_value=set_id)[0]
             Filename = set_info[5] + '.npz'
-            path = os.path.join(os.path.dirname(__file__))[:-15]
-            self.testingSetFilename = os.path.join(path, 'BDFServer\\', 'data\\', 'test_set\\', Filename)
+            path = os.path.dirname(os.path.dirname(__file__))+'\\'
+            self.testingSetFilename = os.path.join(path, 'data\\', 'test_set\\', Filename)
         except Exception as e:
             print('readTestSet', e)
 

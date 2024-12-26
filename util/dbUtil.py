@@ -447,16 +447,15 @@ class dbUtil(MySqlService):
         try:
             if state == '' and flag == '':
                 sql = f"delete from file_info where check_id = {check_id} and file_id = {file_id}"
-            if flag == '':
+            elif flag == '':
                 sql = f"delete from file_info where state = '{state}' and check_id = {check_id} "
             else:
                 sql = f"delete from file_info where state = '{state}' and check_id = {check_id} and file_id = {file_id}"
-            self.myExecuteSql(sql)
+            result = self.myExecuteSql(sql)
         except Exception as e:
             print('del_fileInfo', e)
             return False
         return True
-
 
     # 任务设置模块
     # 查询标注主题信息
@@ -2665,7 +2664,7 @@ class dbUtil(MySqlService):
             print(e)
             return '0', str(e)
     # 模型管理
-    def get_classifier_alg_set_name(self, where_name='', where_value='', fuzzy_search=False, count=''):
+    def get_classifier_alg_set_name(self, where_name='', where_value='',state_value='', fuzzy_search=False, count=''):
         if count == True:
             sql = "select count(*) from classifier"  # 返回行数
         elif where_name == '':
@@ -2674,9 +2673,14 @@ class dbUtil(MySqlService):
                       "classifier.set_id = set_info.set_id"
         else:
             if fuzzy_search:
-                sql = "select classifier_name, alg_name, set_name,train_performance, test_performance from classifier" \
+                if where_value!='':
+                    sql = "select classifier_name, alg_name, set_name,train_performance, test_performance from classifier" \
+                            " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
+                            "classifier.set_id = set_info.set_id where {} like '%{}%' and state ='{}'".format(where_name, where_value,state_value)
+                else:
+                    sql = "select classifier_name, alg_name, set_name,train_performance, test_performance from classifier" \
                           " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
-                          "classifier.set_id = set_info.set_id where {} like '%{}%'".format(where_name, where_value)
+                          "classifier.set_id = set_info.set_id where state ='{}'".format(state_value)
             else:
                 sql = "select classifier_name, alg_name, set_name,train_performance, test_performance from classifier" \
                           " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
@@ -2727,14 +2731,17 @@ class dbUtil(MySqlService):
             sql = f"select * from classifier where {where_name}='{where_value}'"
         classifier_info = self.myQuery(sql)
         return classifier_info
-    def add_init_ClassifierInfo(self, classifier_name, alg_id, set_id, filename, state, train_performance,
-                                    test_performance,
-                                    epoch_length, config_id, channels):
+    def add_init_ClassifierInfo(self, classifier_name='', alg_id='', set_id='', filename='', state='', train_performance='',
+                                    test_performance='',
+                                    epoch_length='', config_id='', channels='',mac='',classifierUnit=''):
         try:
-            sql = "insert into classifier(classifier_name, alg_id, set_id, filename, state, train_performance, " \
-                      "test_performance, epoch_length, config_id,channels) values ('{}',{},{},'{}','{}', '{}','{}',{},{},'{}')".format(
-                    classifier_name, alg_id, set_id, filename, state, train_performance, test_performance,
-                    int(epoch_length), config_id, channels)
+            if filename=='':
+                sql = "insert into classifier(classifier_name, alg_id, set_id, filename, mac, state, train_performance, " \
+                        "test_performance, epoch_length, config_id,classifierUnit,channels) values ('{}',{},{},'{}','{}','{}', '{}','{}',{},{},'{}','{}')".format(
+                        classifier_name, alg_id, set_id, filename, mac,state, train_performance, test_performance,
+                        int(epoch_length), config_id, classifierUnit,channels)
+            else:
+                sql = "update classifier SET filename = '{}' where classifier_name ='{}'".format( filename,classifier_name)
             tag = self.myExecuteSql(sql)
             if tag == '':
                 return '1', str(tag)
@@ -2743,7 +2750,7 @@ class dbUtil(MySqlService):
         except Exception as e:
             print(e)
             return '0', str(e)
-    def get_classifier_name_and_state(self, where_name='', where_value='', where_state='', state=''):
+    def getClsRecord(self, where_name='', where_value='', where_state='', state=''):
         try:
             sql = f"select * from classifier where {where_name}='{where_value}'and {where_state}='{state}'"
             classifier_info = self.myQuery(sql)
@@ -2790,6 +2797,13 @@ class dbUtil(MySqlService):
         try:
             sql = f"select * from set_info where JSON_EXTRACT(description, '$.type') = '{where_type}' limit {offset}, {psize}"
             algorithm_info = self.myQuery(sql)
+            return algorithm_info
+        except Exception as e:
+            print(e)
+    def get_al_setInfo(self,where_name,where_value):
+        try:
+            sql = f"select * from algorithm where {where_name}='{where_value}'"
+            algorithm_info=self.myQuery(sql)
             return algorithm_info
         except Exception as e:
             print(e)
