@@ -16,7 +16,7 @@ from email.mime.text import MIMEText
 
 class appUtil():
     def __init__(self, dbUtil):
-        self.root_path=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        self.root_path=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))+'\\'
         self.algorithm_path = self.root_path + 'client_root\\classifier\\'
         self.dbUtil = dbUtil
         self.model_path = os.path.join(self.root_path,'server_root\\classifier\\models\\')
