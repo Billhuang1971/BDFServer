@@ -122,7 +122,7 @@ class appUtil():
         try:
             package='{:>011}'.format(check_id)
             fileNm = '{:>03}.bdf'.format(file_id)
-            path = os.path.join(self.root_path, 'BDFServer','data', 'formated_data', package, fileNm)
+            path = os.path.join(self.root_path, 'server_root','data', 'formated_data', package, fileNm)
             local_raw = mne.io.read_raw_bdf(path)
         except (IOError,OSError) as err:
             ret_1 = ['0', '打开EEG文件无效', path]
@@ -225,7 +225,7 @@ class appUtil():
         try:
             package='{:>011}'.format(check_id)
             fileNm = '{:>03}.bdf'.format(file_id)
-            path = os.path.join(self.root_path, 'BDFServer','data', 'formated_data', package, fileNm)
+            path = os.path.join(self.root_path, 'server_root','data', 'formated_data', package, fileNm)
             local_raw = mne.io.read_raw_bdf(path)
         except (IOError,OSError) as err:
             ret = ['0', '打开EEG文件无效', path]
@@ -260,7 +260,7 @@ class appUtil():
             name = _fileNm[: _fileNm.index('.')]
             patient_pyname = ''.join(pypinyin.lazy_pinyin(_patient_name, pypinyin.Style.NORMAL))
             package = name.split('_')[0] + '_' + patient_pyname
-            path = os.path.join(self.root_path, 'BDFServer\data', 'formated_data', package, _fileNm)
+            path = os.path.join(self.root_path, 'server_root\data', 'formated_data', package, _fileNm)
 
             local_raw = mne.io.read_raw_bdf(path)
 
@@ -455,7 +455,7 @@ class appUtil():
     def writeEEG(self, check_id, file_id, data):
         # 判断目录是否存在
         dirname = str(check_id).rjust(11, '0')
-        path = os.path.join(self.root_path, 'BDFServer\data', 'formated_data', dirname)
+        path = os.path.join(self.root_path, 'server_root\data', 'formated_data', dirname)
         print("写入的脑电文件名称是：",path)
         filename = str(file_id).rjust(3, '0') + '.bdf'
         if not os.path.exists(path):
@@ -509,7 +509,7 @@ class appUtil():
     def removeFile(self, check_id=None, file_id=None, flag=''):
         if flag == '':
             dirname = str(check_id).rjust(11, '0')
-            path = os.path.join(self.root_path, 'BDFServer\data', 'formated_data', dirname)
+            path = os.path.join(self.root_path, 'server_root\data', 'formated_data', dirname)
             print(path)
             if os.path.exists(path):
                 try:
@@ -523,7 +523,7 @@ class appUtil():
         else:
             dirname = str(check_id).rjust(11, '0')
             filename = str(file_id).rjust(3, '0') + '.bdf'
-            filepath = os.path.join(self.root_path, 'BDFServer\data', 'formated_data', dirname, filename)
+            filepath = os.path.join(self.root_path, 'server_root\data', 'formated_data', dirname, filename)
             try:
                 if os.path.isfile(filepath):
                     os.remove(filepath)
