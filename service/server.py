@@ -7405,15 +7405,26 @@ class server(socketServer):
                 ret = ['0', REQmsg[1], classifier_info]
                 return msgtip, ret
             else:
-                self.dbUtil.add_init_ClassifierInfo(classifier_name=REQmsg[3][0], alg_id=REQmsg[3][1],
-                                                    set_id=REQmsg[3][2], filename='',
-                                                    state='ready', train_performance='',
-                                                    test_performance='',
-                                                    epoch_length=REQmsg[3][3], config_id=REQmsg[3][4],
-                                                    channels=REQmsg[3][5],mac=macAddr,classifierUnit=REQmsg[3][6])
-                msgtip = [REQmsg[1], f"保存模型", '', '']
-                ret = ['1', REQmsg[1], REQmsg[3]]
-                return msgtip, ret
+                type = REQmsg[3][8]
+                nb_class=REQmsg[3][7]
+                sample_lenth=REQmsg[3][3]
+                alg_info = self.dbUtil.get_al_setInfo(where_table='algorithm', where_name='alg_id', where_value=REQmsg[3][1])
+                set_info = self.dbUtil.get_al_setInfo(where_table='set_info',where_name='set_id', where_value=REQmsg[3][2])
+                flag = self.modelmatch(alg_info,set_info, type, nb_class, sample_lenth)
+                if flag == True:
+                    self.dbUtil.add_init_ClassifierInfo(classifier_name=REQmsg[3][0], alg_id=REQmsg[3][1],
+                                                        set_id=REQmsg[3][2], filename='',
+                                                        state='ready', train_performance='',
+                                                        test_performance='',
+                                                        epoch_length=REQmsg[3][3], config_id=REQmsg[3][4],
+                                                        channels=REQmsg[3][5],mac=macAddr,classifierUnit=REQmsg[3][6])
+                    msgtip = [REQmsg[1], f"保存模型", '', '']
+                    ret = ['1', REQmsg[1], REQmsg[3]]
+                    return msgtip, ret
+                else:
+                    msgtip = [REQmsg[1], f"模型匹配失败", '', '']
+                    ret = ['2', REQmsg[3][0]]
+                    return msgtip, ret
         except Exception as re:
             print('DataBaseUtil.checkClassifierInfo:', re)
     def upload_model(self,cmdID,REQmsg):
@@ -7421,40 +7432,28 @@ class server(socketServer):
             cls_name=REQmsg[3][0][0]
             classifier_info = self.dbUtil.getclassifierInfo(where_name='classifier_name', where_value=cls_name)
             file_name='classifier00000'+str(classifier_info[0][0])+'.'+str(REQmsg[3][1])
-            type=REQmsg[3][2]
-            nb_class=REQmsg[3][3]
-            sample_lenth=REQmsg[3][4]
             if classifier_info[0][5]=='ready':
-                alg_id=classifier_info[0][2]#set_id
-                alg_info=self.dbUtil.get_al_setInfo(where_name='alg_id',where_value=alg_id)
-                flag=self.modelmatch(alg_info,type,nb_class,sample_lenth)
-                if flag==True:
-                    self.dbUtil.add_init_ClassifierInfo(classifier_name=cls_name, filename=file_name)
-
-
-                    msgtip = [REQmsg[1], f"模型准备上传", '', '']
-                    ret = ['1', cls_name]
-                    print(ret)
-                    return msgtip, ret
-                else:
-                    msgtip = [REQmsg[1], f"模型匹配失败", '', '']
-                    ret = ['2', cls_name]
-                    return msgtip, ret
+                self.dbUtil.add_init_ClassifierInfo(classifier_name=cls_name, filename=file_name)
+                msgtip = [REQmsg[1], f"模型准备上传", '', '']
+                ret = ['1', cls_name]
+                print(ret)
+                return msgtip, ret
             else:
                 msgtip = [REQmsg[1], f"选择的模型不是准备上传状态", '', '']
                 ret = ['0', cls_name]
                 return msgtip, ret
         except Exception as re:
             print('DataBaseUtil.checkClassifierInfo:', re)
-    def modelmatch(self,alg_info,type,nb_class,sample_lenth):
+    def modelmatch(self,alg_info,set_info,type,nb_class,sample_lenth):
         if (alg_info[0][17] == 'waveform' and type != 'wave'):
             return False
         if (alg_info[0][17] == 'state' and type != 'state'):
             return False
         algPara = json.loads(alg_info[0][3])
+        setPara =json.loads(set_info[0][3])
         if nb_class != algPara['nb_class']:
             return False
-        if sample_lenth!=algPara['sample_len']:
+        if sample_lenth!=algPara['sample_len'] or sample_lenth!=setPara['span']:
             return False
         return True
 

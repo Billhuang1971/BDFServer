@@ -2800,9 +2800,9 @@ class dbUtil(MySqlService):
             return algorithm_info
         except Exception as e:
             print(e)
-    def get_al_setInfo(self,where_name,where_value):
+    def get_al_setInfo(self,where_table,where_name,where_value):
         try:
-            sql = f"select * from algorithm where {where_name}='{where_value}'"
+            sql = f"select * from {where_table} where {where_name}='{where_value}'"
             algorithm_info=self.myQuery(sql)
             return algorithm_info
         except Exception as e:
