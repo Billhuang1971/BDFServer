@@ -2668,7 +2668,7 @@ class dbUtil(MySqlService):
         if count == True:
             sql = "select count(*) from classifier"  # 返回行数
         elif where_name == '':
-            sql = "select classifier_name, alg_name, set_name,train_performance, test_performance from classifier" \
+            sql = "select classifier_name, alg_name, set_name,epoch_length, classifierUnit,type, channels,train_performance, test_performance from classifier" \
                       " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
                       "classifier.set_id = set_info.set_id"
         else:
@@ -2678,7 +2678,7 @@ class dbUtil(MySqlService):
                             " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
                             "classifier.set_id = set_info.set_id where {} like '%{}%' and state ='{}'".format(where_name, where_value,state_value)
                 else:
-                    sql = "select classifier_name, alg_name, set_name,train_performance, test_performance from classifier" \
+                    sql = "select classifier_name, alg_name, set_name,epoch_length, classifierUnit,type, channels,train_performance, test_performance from classifier" \
                           " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
                           "classifier.set_id = set_info.set_id where state ='{}'".format(state_value)
             else:
@@ -2688,7 +2688,7 @@ class dbUtil(MySqlService):
         cls_info = self.myQuery(sql)
         return cls_info
     def getClsInfoByPage(self, offset='', psize=''):
-        sql = f"select classifier_name, alg_name, set_name,train_performance, test_performance from classifier " \
+        sql = f"select classifier_name, alg_name, set_name,epoch_length, classifierUnit,type, channels,train_performance, test_performance from classifier " \
                   " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
                   "classifier.set_id = set_info.set_id limit {}, {}".format(offset, psize)
         cls_info = self.myQuery(sql)
