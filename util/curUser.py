@@ -32,7 +32,7 @@ class curUser:
             'studentT': ['pwd', 'quit', 'logout','diagTest','diagTraining','testAssess'],
             'teacherT': ['pwd', 'quit', 'logout', 'configOptions', 'manualQuery', 'consulting', 'createLesson','testAssess','reserching', 'patientManager'],
             'doctorT': ['pwd', 'quit', 'logout', 'patientManager', 'configOptions', 'manual', 'manualQuery',
-                        'consulting', 'createCons', 'dataImport','testAssess','reserching' ],
+                        'consulting', 'createCons', 'dataImport','testAssess','reserching', 'EEG' ],
             'researcherT': ['pwd', 'quit', 'logout', 'configOptions', 'manualQuery', 'consulting', 'reserching','reserchingQuery', 'setBuild','delSet_info', 'algorithm', 'taskSettings', 'modelTrain', 'classifier', 'sampleState', 'patientManager', 'modelTest', 'detailLook', 'auto', 'clearLabel', 'assessLabel'],
         }
 

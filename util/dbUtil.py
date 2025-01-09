@@ -1,4 +1,5 @@
 import re
+from random import sample
 
 from util.mysqlService import MySqlService
 
@@ -3120,6 +3121,15 @@ class dbUtil(MySqlService):
                 return '1', str(tag)
             else:
                 return '0', str(tag)
+        except Exception as re:
+            print(re)
+            return '0', str(re)
+
+    def getWinSampleInfo(self, check_id, file_id, begin, end):
+        try:
+            sql = f"select mid, begin, channel, end, uid, utype_id from label_info where check_id={check_id} and file_id={file_id} and begin >= {begin} and end < {end}"
+            sample = self.myQuery(sql)
+            return '1', sample
         except Exception as re:
             print(re)
             return '0', str(re)

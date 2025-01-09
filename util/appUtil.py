@@ -125,48 +125,27 @@ class appUtil():
             path = os.path.join(self.root_path,'data', 'formated_data', package, fileNm)
             local_raw = mne.io.read_raw_bdf(path)
         except (IOError,OSError) as err:
-            ret_1 = ['0', '打开EEG文件无效', path]
             print(f"openEEGFile：except={err}")
+            ret = ['0', f'读数据块raw_copy不成功:{e}.']
         try:
             local_channels = local_raw.info['ch_names']
-            local_index_channels = mne.pick_channels(local_channels, include=[])
             local_sampling_rate = int(local_raw.info['sfreq'])
-            local_n_times = local_raw.n_times
-            local_duration = int(local_n_times // local_sampling_rate)
-            meas_date = local_raw.info['meas_date']
-            if isinstance(meas_date, tuple):
-                meas_date = datetime.datetime.fromtimestamp(meas_date[0])
-            local_start_time = meas_date.strftime('%H:%M:%S')
-            local_end_time = meas_date + datetime.timedelta(seconds=local_duration)
-            local_end_time = local_end_time.strftime('%H:%M:%S')
-
-            ret_1 = ['1', local_raw, local_channels, local_index_channels,
-               local_sampling_rate, local_n_times, local_duration, meas_date, local_start_time, local_end_time]
+            local_index_channels = mne.pick_channels(local_channels, include=[])
         except Exception as err:
-            ret_1 = ['0', f'读EEG文件头异常:{err}']
             print(f"openEEGFile：读EEG文件头异常={err}")
+            ret = ['0', f'读数据块raw_copy不成功:{e}.']
 
         # 读文件
-        raw = ret_1[1]
-        _index_channels = ret_1[3]
         try:
-            raw_copy = raw.copy()
-            if _t_min != -1:
-                if _t_max == -1:
-                    raw_copy.crop(tmin=_t_min, include_tmax=True)
-                else:
-                    raw_copy.crop(tmin=_t_min, tmax=_t_max)
-            raw_copy.load_data()
-            data, times = raw_copy[_index_channels, :]
-            data = data * (pow(10, 4))
-            #data = data * 1037
-            ret = ['1', data, times]
-            print(f"readEEGfile：ok:len(data)={len(data)}:{times}")
+            raw_copy = local_raw.copy()
+            data, _ = raw_copy[local_index_channels, _t_min: _t_max]
+            ret = ['1', data, local_sampling_rate]
+            print(f"readEEGfile：ok:len(data)={len(data)}")
         except Exception as e:
             ret = ['0',f'读数据块raw_copy不成功:{e}.']
 
         # 关闭文件
-        raw.close()
+        local_raw.close()
         return ret
 
     def closeEEGfile(self,raw):
@@ -452,58 +431,58 @@ class appUtil():
         return filename, new_file_id ,check_id
 
     # 整合laod_dataDynamical中打开文件、读文件关闭文件
-    def readEEG(self, check_id, file_id, _t_min, _t_max):
-        # 打开文件
-        try:
-            package = '{:>011}'.format(check_id)
-            fileNm = '{:>03}.bdf'.format(file_id)
-            path = os.path.join(self.root_path, 'BDFServer', 'data', 'formated_data', package, fileNm)
-            local_raw = mne.io.read_raw_bdf(path)
-        except (IOError, OSError) as err:
-            ret_1 = ['0', '打开EEG文件无效', path]
-            print(f"openEEGFile：except={err}")
-        try:
-            local_channels = local_raw.info['ch_names']
-            local_index_channels = mne.pick_channels(local_channels, include=[])
-            local_sampling_rate = int(local_raw.info['sfreq'])
-            local_n_times = local_raw.n_times
-            local_duration = int(local_n_times // local_sampling_rate)
-            meas_date = local_raw.info['meas_date']
-            if isinstance(meas_date, tuple):
-                meas_date = datetime.datetime.fromtimestamp(meas_date[0])
-            local_start_time = meas_date.strftime('%H:%M:%S')
-            local_end_time = meas_date + datetime.timedelta(seconds=local_duration)
-            local_end_time = local_end_time.strftime('%H:%M:%S')
-
-            ret_1 = ['1', local_raw, local_channels, local_index_channels,
-                     local_sampling_rate, local_n_times, local_duration, meas_date, local_start_time,
-                     local_end_time]
-        except Exception as err:
-            ret_1 = ['0', f'读EEG文件头异常:{err}']
-            print(f"openEEGFile：读EEG文件头异常={err}")
-
-        # 读文件
-        raw = ret_1[1]
-        _index_channels = ret_1[3]
-        try:
-            raw_copy = raw.copy()
-            if _t_min != -1:
-                if _t_max == -1:
-                    raw_copy.crop(tmin=_t_min, include_tmax=True)
-                else:
-                    raw_copy.crop(tmin=_t_min, tmax=_t_max)
-            raw_copy.load_data()
-            data, times = raw_copy[_index_channels, :]
-            data = data * (pow(10, 4))
-            # data = data * 1037
-            ret = ['1', data, times]
-            print(f"readEEGfile：ok:len(data)={len(data)}:{times}")
-        except Exception as e:
-            ret = ['0', f'读数据块raw_copy不成功:{e}.']
-
-        # 关闭文件
-        raw.close()
-        return ret
+    # def readEEG(self, check_id, file_id, _t_min, _t_max):
+    #     # 打开文件
+    #     try:
+    #         package = '{:>011}'.format(check_id)
+    #         fileNm = '{:>03}.bdf'.format(file_id)
+    #         path = os.path.join(self.root_path, 'BDFServer', 'data', 'formated_data', package, fileNm)
+    #         local_raw = mne.io.read_raw_bdf(path)
+    #     except (IOError, OSError) as err:
+    #         ret_1 = ['0', '打开EEG文件无效', path]
+    #         print(f"openEEGFile：except={err}")
+    #     try:
+    #         local_channels = local_raw.info['ch_names']
+    #         local_index_channels = mne.pick_channels(local_channels, include=[])
+    #         local_sampling_rate = int(local_raw.info['sfreq'])
+    #         local_n_times = local_raw.n_times
+    #         local_duration = int(local_n_times // local_sampling_rate)
+    #         meas_date = local_raw.info['meas_date']
+    #         if isinstance(meas_date, tuple):
+    #             meas_date = datetime.datetime.fromtimestamp(meas_date[0])
+    #         local_start_time = meas_date.strftime('%H:%M:%S')
+    #         local_end_time = meas_date + datetime.timedelta(seconds=local_duration)
+    #         local_end_time = local_end_time.strftime('%H:%M:%S')
+    #
+    #         ret_1 = ['1', local_raw, local_channels, local_index_channels,
+    #                  local_sampling_rate, local_n_times, local_duration, meas_date, local_start_time,
+    #                  local_end_time]
+    #     except Exception as err:
+    #         ret_1 = ['0', f'读EEG文件头异常:{err}']
+    #         print(f"openEEGFile：读EEG文件头异常={err}")
+    #
+    #     # 读文件
+    #     raw = ret_1[1]
+    #     _index_channels = ret_1[3]
+    #     try:
+    #         raw_copy = raw.copy()
+    #         if _t_min != -1:
+    #             if _t_max == -1:
+    #                 raw_copy.crop(tmin=_t_min, include_tmax=True)
+    #             else:
+    #                 raw_copy.crop(tmin=_t_min, tmax=_t_max)
+    #         raw_copy.load_data()
+    #         data, times = raw_copy[_index_channels, :]
+    #         data = data * (pow(10, 4))
+    #         # data = data * 1037
+    #         ret = ['1', data, times]
+    #         print(f"readEEGfile：ok:len(data)={len(data)}:{times}")
+    #     except Exception as e:
+    #         ret = ['0', f'读数据块raw_copy不成功:{e}.']
+    #
+    #     # 关闭文件
+    #     raw.close()
+    #     return ret
 
     # 写脑电文件功能
     def writeEEG(self, check_id, file_id, data):

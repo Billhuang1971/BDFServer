@@ -5,6 +5,7 @@ import datetime
 import os
 import pickle
 import threading
+from distutils.command.check import check
 from functools import partial
 from math import ceil
 from os import makedirs, path, remove
@@ -1159,11 +1160,66 @@ class server(socketServer):
                 tipmsg, ret = self.getSearchScanFileInfo(macAddr, REQmsg)
                 REQmsg[3] = ret
 
+            # EEG 脑电图绘制
+            elif cmd == 'EEG' and cmdID == 0:
+                tipmsg, ret = self.openEEGFile(macAddr, REQmsg)
+                REQmsg[3] = ret
+            elif cmd == 'EEG' and cmdID == 1:
+                tipmsg, ret = self.loadDataDynamical(macAddr, REQmsg)
+                REQmsg[3] = ret
+
             else:
                 REQmsg[3] = ['0', REQmsg[1], f'未定义命令{REQmsg[1]}']
                 tipmsg = [REQmsg[2], f"应答{REQmsg[0]} ", f'未定义命令{REQmsg[1]}', '']
         self.myTip(REQmsg[1], tipmsg)
         return REQmsg
+
+
+    # EEG 脑电图绘制
+    def openEEGFile(self, macAddr, REQmsg):
+        msg = REQmsg[3]
+        paint = self.dbUtil.getPatientInfo(where_name='patient_id', where_value=msg[0])[0]
+        type_info = self.dbUtil.get_typeInfo()
+        path = os.path.join(self.appUtil.root_path, "data\\config.json")
+        print(path)
+        with open(path, 'r', encoding='utf-8') as fp:
+            data = json.load(fp)
+            montage = data.get('montages')
+            fp.close()
+        eeg = self.appUtil.openEEGFile(msg[1], msg[2])
+        if eeg[0] == '0':
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
+            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}打开脑电文件成功"]
+        else:
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
+            ret = ['1', REQmsg[1], [paint, eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[8], eeg[9], type_info, montage]]
+        return msgtip, ret
+
+    def loadDataDynamical(self, macAddr, REQmsg):
+        msg = REQmsg[3]
+        print(msg)
+        check_id = msg[0]
+        file_id = msg[1]
+        min_t = msg[2]
+        max_t = msg[3]
+        eeg = self.appUtil.readEEG(check_id, file_id, min_t, max_t)
+        if eeg[0] == '0':
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
+            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}打开脑电文件失败"]
+            return msgtip, ret
+        data = eeg[1]
+        rate = eeg[2]
+        begin = min_t // rate
+        end = max_t // rate
+        cmd, sample_info = self.dbUtil.getWinSampleInfo(check_id, file_id, begin, end)
+        if cmd == '0':
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '读取样本信息失败', "", '']
+            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}读取样本信息失败"]
+            return msgtip, ret
+        msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '获取脑电数据成功', "", '']
+        ret = ['1', REQmsg[1], [data, sample_info]]
+        return msgtip, ret
+
 
     def login(self, userAccount, pwd, macAddr):
         case, msg, userInfo = self.curUser.login(userAccount, pwd, macAddr)
@@ -4929,59 +4985,6 @@ class server(socketServer):
         return msgtip, ret
 
         # 标注诊断/打开脑电文件
-
-    def openEEGFile(self, clientAddr, REQmsg, curUser):
-        if REQmsg[1] == 8:
-            check_id = REQmsg[3][0]
-            file_id = REQmsg[3][1]
-            patient_id = REQmsg[3][2]
-            uid = REQmsg[3][3]
-            tmp_type_info = self.dbUtil.get_typeInfo()
-            # tmp_user_info = self.dbUtil.getUserInfo()
-            tmp_user_info = self.dbUtil.getUserInfoByDiag(check_id)
-
-            tmp_type_filter = [x[1] for x in tmp_type_info]
-            tmp_user_filter = [x[3] for x in tmp_user_info]
-
-            ret = self.appUtil.openEEGFile(check_id, file_id)
-            if ret[0] == '0':
-                msgtip = [REQmsg[2], f"应答{REQmsg[0]}打开EEG文件无效", '{:>03}.bdf'.format(file_id), ""]
-                return msgtip, ret
-            raw = ret[1]
-            self.appUtil.closeEEGfile(raw)
-            _channels = ret[2]
-
-            _patientInfo = self.dbUtil.get_patientInfo('patient_id', patient_id)
-
-            _channels = tuple(_channels) if len(_channels) != 1 else "('{}')".format(_channels[0])
-            _type_names = tuple(tmp_type_filter) if len(tmp_type_filter) != 1 else "('{}')".format(
-                tmp_type_filter[0])
-
-            if REQmsg[0] == 'consulting' or REQmsg[0] == 'manualQuery':
-                _user_names = "('{}')".format(REQmsg[3][3])
-            else:
-                _user_names = tuple(tmp_user_filter) if len(tmp_user_filter) != 1 else "('{}')".format(
-                    tmp_user_filter[0])
-            _status_show = True
-            rn1, _sample_list = self.dbUtil.get_sampleListInfo(check_id, file_id, _channels, _type_names,
-                                                               _user_names,
-                                                               _status_show)
-            _status_info = []
-            if rn1 == '0':
-              _sample_list = None
-            else:
-                for sa in _sample_list:
-                    if sa[0] == 'all':
-                        _status_info.append(sa)
-
-            REPData = ['1', _patientInfo, _sample_list, ret[2], ret[3],
-                       ret[4], ret[5], ret[6], ret[7], ret[8], ret[9], _status_info, tmp_user_info]
-
-            msgtip = [REQmsg[2], f"应答{REQmsg[0]}打开EEG文件", '成功', '']
-        else:
-            REPData = ['0', REQmsg[1], f"应答{REQmsg[0]}未定义命令"]
-            msgtip = [REQmsg[2], f"应答{REQmsg[0]}打开EEG文件", '未定义命令', '']
-        return msgtip, REPData
 
 
         # 标注诊断/检测文件
