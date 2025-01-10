@@ -117,7 +117,7 @@ class appUtil():
         return sysd
 
     # 整合laod_dataDynamical中打开文件、读文件关闭文件
-    def readEEG(self, check_id , file_id , _t_min , _t_max):
+    def readEEG(self, check_id, file_id, t_min, t_max, nSmaple):
         # 打开文件
         try:
             package='{:>011}'.format(check_id)
@@ -126,23 +126,25 @@ class appUtil():
             local_raw = mne.io.read_raw_bdf(path)
         except (IOError,OSError) as err:
             print(f"openEEGFile：except={err}")
-            ret = ['0', f'读数据块raw_copy不成功:{e}.']
+            return ['0', f'读数据块raw_copy不成功:{err}.']
         try:
             local_channels = local_raw.info['ch_names']
             local_sampling_rate = int(local_raw.info['sfreq'])
             local_index_channels = mne.pick_channels(local_channels, include=[])
         except Exception as err:
+            local_raw.close()
             print(f"openEEGFile：读EEG文件头异常={err}")
-            ret = ['0', f'读数据块raw_copy不成功:{e}.']
+            return ['0', f'读数据块raw_copy不成功:{err}.']
 
         # 读文件
         try:
             raw_copy = local_raw.copy()
-            data, _ = raw_copy[local_index_channels, _t_min: _t_max]
+            data, _ = raw_copy[local_index_channels, t_min: t_max]
+            data = data[:, ::nSmaple]
             ret = ['1', data, local_sampling_rate]
             print(f"readEEGfile：ok:len(data)={len(data)}")
         except Exception as e:
-            ret = ['0',f'读数据块raw_copy不成功:{e}.']
+            ret = ['0', f'读数据块raw_copy不成功:{e}.']
 
         # 关闭文件
         local_raw.close()
@@ -223,47 +225,14 @@ class appUtil():
             local_end_time = meas_date + datetime.timedelta(seconds=local_duration)
             local_end_time = local_end_time.strftime('%H:%M:%S')
 
-            ret = ['1', local_raw, local_channels, local_index_channels,
-               local_sampling_rate, local_n_times, local_duration, meas_date, local_start_time, local_end_time]
+            ret = ['1', local_channels, local_index_channels,
+               local_sampling_rate, local_n_times, local_duration, local_start_time, local_end_time]
+            local_raw.close()
             return ret
         except Exception as err:
-            ret = ['0', f'读EEG文件头异常:{err}']
+            local_raw.close()
             print(f"openEEGFile：读EEG文件头异常={err}")
-            return ret
-
-    def openEEGFile0(self, _patient_id, _patient_name, _fileNm, _mdate):
-        try:
-            local_patient_id= _patient_id
-            local_file_name = _fileNm
-            local_patient_name = _patient_name
-            name = _fileNm[: _fileNm.index('.')]
-            patient_pyname = ''.join(pypinyin.lazy_pinyin(_patient_name, pypinyin.Style.NORMAL))
-            package = name.split('_')[0] + '_' + patient_pyname
-            path = os.path.join(self.root_path, 'data', 'formated_data', package, _fileNm)
-
-            local_raw = mne.io.read_raw_bdf(path)
-
-        except (IOError,OSError) as err:
-            ret = ['0', '打开EEG文件无效', _fileNm]
-            print(f"openEEGFile：except={err}")
-            return ret
-        local_channels = local_raw.info['ch_names']
-        local_index_channels = mne.pick_channels(local_channels, include=[])
-        local_sampling_rate = int(local_raw.info['sfreq'])
-        local_n_times = local_raw.n_times
-        local_duration = int(local_n_times // local_sampling_rate)
-        meas_date = local_raw.info['meas_date']
-        local_measure_date = _mdate
-        if isinstance(meas_date, tuple):
-            meas_date = datetime.datetime.fromtimestamp(meas_date[0])
-        local_start_time = meas_date.strftime('%H:%M:%S')
-        local_end_time = meas_date + datetime.timedelta(seconds=local_duration)
-        local_end_time = local_end_time.strftime('%H:%M:%S')
-
-        ret = ['1', local_raw, local_channels, local_index_channels,
-               local_sampling_rate, local_n_times, local_duration, meas_date, local_start_time, local_end_time]
-
-        return ret
+            return ['0', f'读EEG文件头异常:{err}']
 
     def sendPhoneMsg(self,phone,content):
        statusStr = {
@@ -328,7 +297,7 @@ class appUtil():
                 return '1',montageData
         except (IOError, OSError) as err:
             #print('getMontage', err)
-            return'0', '打开导联文件文件无效'
+            return '0', '打开导联文件文件无效'
 
 
     def addMontageScheme(self, scheme_name, channels=[]):

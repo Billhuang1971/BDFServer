@@ -3127,12 +3127,12 @@ class dbUtil(MySqlService):
 
     def getWinSampleInfo(self, check_id, file_id, begin, end):
         try:
-            sql = f"select mid, begin, channel, end, uid, utype_id from label_info where check_id={check_id} and file_id={file_id} and begin >= {begin} and end < {end}"
+            sql = f"select mid, channel, begin, end, uid, utype_id from label_info where check_id={check_id} and file_id={file_id} and begin >= {begin} and end < {end}"
             sample = self.myQuery(sql)
-            return '1', sample
+            return sample
         except Exception as re:
             print(re)
-            return '0', str(re)
+            return []
 
 if __name__ == '__main__':
     dbUtil = dbUtil()

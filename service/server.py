@@ -1177,22 +1177,35 @@ class server(socketServer):
 
     # EEG 脑电图绘制
     def openEEGFile(self, macAddr, REQmsg):
-        msg = REQmsg[3]
-        paint = self.dbUtil.getPatientInfo(where_name='patient_id', where_value=msg[0])[0]
-        type_info = self.dbUtil.get_typeInfo()
-        path = os.path.join(self.appUtil.root_path, "data\\config.json")
-        print(path)
-        with open(path, 'r', encoding='utf-8') as fp:
-            data = json.load(fp)
-            montage = data.get('montages')
-            fp.close()
-        eeg = self.appUtil.openEEGFile(msg[1], msg[2])
+        patient_id = REQmsg[3][0]
+        check_id = REQmsg[3][1]
+        file_id = REQmsg[3][2]
+        nSecWin = REQmsg[3][3]
+        nDotSec = REQmsg[3][4]
+        nWinBlock = REQmsg[3][5]
+        eeg = self.appUtil.openEEGFile(check_id, file_id)
         if eeg[0] == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
-            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}打开脑电文件成功"]
-        else:
+            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}打开脑电文件失败"]
+            return msgtip, ret
+
+        lenBlock = min(nSecWin * nWinBlock * eeg[3], eeg[4])
+        nSample = 1 if nDotSec >= eeg[3] else int(round(eeg[3] / nDotSec))
+        lenWin = nSecWin * eeg[3] // nSample
+        data = self.appUtil.readEEG(check_id, file_id, 0, lenBlock, nSample)
+        if data[0] == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
-            ret = ['1', REQmsg[1], [paint, eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[8], eeg[9], type_info, montage]]
+            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}打开脑电文件失败"]
+            return msgtip, ret
+        patient = self.dbUtil.getPatientInfo(where_name='patient_id', where_value=patient_id)[0]
+        type_info = self.dbUtil.get_typeInfo()
+        montage = []
+        labels = self.dbUtil.getWinSampleInfo(check_id, file_id, 0, lenBlock)
+        for label in labels:
+            label[2] // nSample
+            label[3] // nSample
+        msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件成功', "", '']
+        ret = ['1', REQmsg[1], [patient, type_info, montage, eeg[1], eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[7], lenBlock // nSample, nSample, lenWin, data[1], labels]]
         return msgtip, ret
 
     def loadDataDynamical(self, macAddr, REQmsg):
@@ -4966,23 +4979,7 @@ class server(socketServer):
                 msgtip = [REQmsg[2], f"应答{REQmsg[0]}读数据块", '成功', ""]
         return msgtip, ret
 
-    # 测试readEEG(),启用readEEG时可以将当前函数名与上述函数名替换
-    def load_dataDynamicalXXX(self, clientAddr, REQmsg, curUser):
-        if REQmsg[1] == 9 or REQmsg[1] == 10:
-            check_id = REQmsg[3][0]
-            file_id = REQmsg[3][1]
-            REQdata = REQmsg[3][2]
-            t_min = REQdata[1]
-            t_max = REQdata[2]
-            ret_data = self.appUtil.readEEG(check_id,file_id,t_min,t_max)
 
-            if ret_data[0] == '0':
-                msgtip = [REQmsg[2], f"应答{REQmsg[0]}读数据块", '打开文件Raw为空', ""]
-                ret = ['0', REQmsg[1], '打开文件Raw为空']
-            else:
-                ret = ['1', REQmsg[1], REQdata[0], ret_data[1], ret_data[2]]
-                msgtip = [REQmsg[2], f"应答{REQmsg[0]}读数据块", '成功', ""]
-        return msgtip, ret
 
         # 标注诊断/打开脑电文件
 
@@ -5004,7 +5001,6 @@ class server(socketServer):
         return msgtip, ret
 
         # 标注诊断/类型、用户信息
-
     def get_type_info(self, clientAddr, REQmsg):
         if REQmsg[1] == 4:
             type_info = self.dbUtil.get_typeInfo()
