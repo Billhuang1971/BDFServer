@@ -1183,6 +1183,7 @@ class server(socketServer):
         nSecWin = REQmsg[3][3]
         nDotSec = REQmsg[3][4]
         nWinBlock = REQmsg[3][5]
+        tableName = REQmsg[3][6]
         eeg = self.appUtil.openEEGFile(check_id, file_id)
         if eeg[0] == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
@@ -1200,7 +1201,7 @@ class server(socketServer):
         patient = self.dbUtil.getPatientInfo(where_name='patient_id', where_value=patient_id)[0]
         type_info = self.dbUtil.get_typeInfo()
         montage = []
-        labels = self.dbUtil.getWinSampleInfo(check_id, file_id, 0, lenBlock)
+        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, 0, lenBlock)
         for label in labels:
             label[2] // nSample
             label[3] // nSample
@@ -1210,12 +1211,12 @@ class server(socketServer):
 
     def loadEEGData(self, macAddr, REQmsg):
         msg = REQmsg[3]
-        print(msg)
         check_id = msg[0]
         file_id = msg[1]
         min_t = msg[2]
         max_t = msg[3]
         nSample = msg[4]
+        tableName = msg[5]
         eeg = self.appUtil.readEEG(check_id, file_id, min_t, max_t, nSample)
         if eeg[0] == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
@@ -1225,7 +1226,7 @@ class server(socketServer):
         rate = eeg[2]
         begin = min_t // rate
         end = max_t // rate
-        labels = self.dbUtil.getWinSampleInfo(check_id, file_id, begin, end)
+        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, 0, lenBlock)
         for label in labels:
             label[2] // nSample
             label[3] // nSample
