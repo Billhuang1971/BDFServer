@@ -1226,7 +1226,7 @@ class server(socketServer):
         rate = eeg[2]
         begin = min_t // rate
         end = max_t // rate
-        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, 0, lenBlock)
+        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, begin, end)
         for label in labels:
             label[2] // nSample
             label[3] // nSample
