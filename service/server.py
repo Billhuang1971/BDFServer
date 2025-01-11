@@ -1165,7 +1165,7 @@ class server(socketServer):
                 tipmsg, ret = self.openEEGFile(macAddr, REQmsg)
                 REQmsg[3] = ret
             elif cmd == 'EEG' and cmdID == 1:
-                tipmsg, ret = self.loadDataDynamical(macAddr, REQmsg)
+                tipmsg, ret = self.loadEEGData(macAddr, REQmsg)
                 REQmsg[3] = ret
 
             else:
@@ -1208,14 +1208,15 @@ class server(socketServer):
         ret = ['1', REQmsg[1], [patient, type_info, montage, eeg[1], eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[7], lenBlock // nSample, nSample, lenWin, data[1], labels]]
         return msgtip, ret
 
-    def loadDataDynamical(self, macAddr, REQmsg):
+    def loadEEGData(self, macAddr, REQmsg):
         msg = REQmsg[3]
         print(msg)
         check_id = msg[0]
         file_id = msg[1]
         min_t = msg[2]
         max_t = msg[3]
-        eeg = self.appUtil.readEEG(check_id, file_id, min_t, max_t)
+        nSample = msg[4]
+        eeg = self.appUtil.readEEG(check_id, file_id, min_t, max_t, nSample)
         if eeg[0] == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}打开脑电文件失败"]
@@ -1224,13 +1225,12 @@ class server(socketServer):
         rate = eeg[2]
         begin = min_t // rate
         end = max_t // rate
-        cmd, sample_info = self.dbUtil.getWinSampleInfo(check_id, file_id, begin, end)
-        if cmd == '0':
-            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '读取样本信息失败', "", '']
-            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}读取样本信息失败"]
-            return msgtip, ret
+        labels = self.dbUtil.getWinSampleInfo(check_id, file_id, begin, end)
+        for label in labels:
+            label[2] // nSample
+            label[3] // nSample
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '获取脑电数据成功', "", '']
-        ret = ['1', REQmsg[1], [data, sample_info]]
+        ret = ['1', REQmsg[1], [data, labels]]
         return msgtip, ret
 
 
