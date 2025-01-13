@@ -1184,6 +1184,7 @@ class server(socketServer):
         nDotSec = REQmsg[3][4]
         nWinBlock = REQmsg[3][5]
         tableName = REQmsg[3][6]
+        user_id = REQmsg[3][7]
         eeg = self.appUtil.openEEGFile(check_id, file_id)
         if eeg[0] == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
@@ -1201,12 +1202,9 @@ class server(socketServer):
         patient = self.dbUtil.getPatientInfo(where_name='patient_id', where_value=patient_id)[0]
         type_info = self.dbUtil.get_typeInfo()
         montage = []
-        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, 0, lenBlock)
-        for label in labels:
-            label[2] // nSample
-            label[3] // nSample
+        labels, labelBit = self.dbUtil.labFirst(tableName, check_id, file_id, lenBlock, user_id, nSecWin * nDotSec, eeg[4], nSample)
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件成功', "", '']
-        ret = ['1', REQmsg[1], [patient, type_info, montage, eeg[1], eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[7], lenBlock // nSample, nSample, lenWin, data[1], labels]]
+        ret = ['1', REQmsg[1], [patient, type_info, montage, eeg[1], eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[7], lenBlock // nSample, nSample, lenWin, data[1], labels, labelBit]]
         return msgtip, ret
 
     def loadEEGData(self, macAddr, REQmsg):
