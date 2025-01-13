@@ -1215,6 +1215,7 @@ class server(socketServer):
         max_t = msg[3]
         nSample = msg[4]
         tableName = msg[5]
+        user_id = msg[6]
         eeg = self.appUtil.readEEG(check_id, file_id, min_t, max_t, nSample)
         if eeg[0] == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
@@ -1224,7 +1225,7 @@ class server(socketServer):
         rate = eeg[2]
         begin = min_t // rate
         end = max_t // rate
-        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, begin, end)
+        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, begin, end, user_id)
         for label in labels:
             label[2] // nSample
             label[3] // nSample
