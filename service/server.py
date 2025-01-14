@@ -1244,13 +1244,7 @@ class server(socketServer):
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}打开脑电文件失败"]
             return msgtip, ret
         data = eeg[1]
-        rate = eeg[2]
-        begin = min_t // rate
-        end = max_t // rate
-        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, begin, end, user_id)
-        for label in labels:
-            label[2] // nSample
-            label[3] // nSample
+        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, min_t, max_t, user_id, nSample)
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '获取脑电数据成功', "", '']
         ret = ['1', REQmsg[1], [data, labels]]
         return msgtip, ret

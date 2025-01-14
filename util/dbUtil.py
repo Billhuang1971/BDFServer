@@ -3127,11 +3127,22 @@ class dbUtil(MySqlService):
             print(re)
             return '0', str(re)
 
-    def getWinSampleInfo(self, table_name, check_id, file_id, begin, end, user_id):
+    def getWinSampleInfo(self, table_name, check_id, file_id, begin, end, user_id, nSample):
         try:
-            sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and begin >= {begin} and end < {end} order by begin"
-            sample = self.myQuery(sql)
-            return sample
+            sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} order by begin"
+            samples = self.myQuery(sql)
+            labels = []
+            for sample in samples:
+                sample = list(sample)
+                if sample[2] <= begin:
+                    continue
+                if sample[1] >= end:
+                    break
+                sample[1] = sample[1] // nSample
+                sample[2] = sample[2] // nSample
+                labels.append(sample)
+            print(labels)
+            return labels
         except Exception as re:
             print(re)
             return []
