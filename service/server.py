@@ -1204,13 +1204,29 @@ class server(socketServer):
             return msgtip, ret
         patient = self.dbUtil.getPatientInfo(where_name='patient_id', where_value=patient_id)[0]
         type_info = self.dbUtil.get_typeInfo()
-        montage = []
+        if data[3] == 'EEG':
+            ieeg = False
+            montageRaw = self.appUtil.getMontage()
+            # montage={'导联名’:[对应通道]}
+            montage = {}
+            key = 'defualt'
+            montage[key] = eeg[1] #添加缺省导联
+            for entry in montageRaw[1]:
+                name = entry['name']
+                channels = entry['channels']
+                # 如果 name 不在字典中，则初始化一个空列表
+                if name not in montage:
+                    montage[name] = channels
+                # 将结果转换为列表形式
+        else:
+            ieeg = True
+            montage={}
         tempt, labelBit = self.dbUtil.labFirst(tableName, check_id, file_id, lenBlock, user_id, nSecWin * nDotSec, eeg[4], nSample)
         labels=[]
         for label in tempt:
             labels.append([label[0],label[1],label[2],label[3]])
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件成功', "", '']
-        ret = ['1', REQmsg[1], [patient, type_info, montage, eeg[1], eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[7], lenBlock // nSample, nSample, lenWin, data[1], labels, labelBit]]
+        ret = ['1', REQmsg[1], [patient, type_info, montage, eeg[1], eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[7], lenBlock // nSample, nSample, lenWin, data[1], labels, labelBit, ieeg]]
         return msgtip, ret
 
     def loadEEGData(self, macAddr, REQmsg):

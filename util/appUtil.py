@@ -7,6 +7,7 @@ import os
 import time, shutil
 import re
 import mne
+import pyedflib
 import pypinyin
 
 import urllib
@@ -123,6 +124,16 @@ class appUtil():
             package='{:>011}'.format(check_id)
             fileNm = '{:>03}.bdf'.format(file_id)
             path = os.path.join(self.root_path,'data', 'formated_data', package, fileNm)
+            # 读取BDF文件标识
+            with pyedflib.EdfReader(path) as reader:
+                # 内部属性包含 recording 字段
+                recording_field = reader.recording
+                print("Recording Field:", recording_field)
+            # 转换为字符串
+            recording_str = recording_field.decode("ascii")
+            # 提取最后一个部分（按空格分割后取最后一个部分）
+            recording_additional = recording_str.split()[-1]
+            # print("Extracted Recording Additional Info:", recording_additional)
             local_raw = mne.io.read_raw_bdf(path)
         except (IOError,OSError) as err:
             print(f"openEEGFile：except={err}")
@@ -141,7 +152,7 @@ class appUtil():
             raw_copy = local_raw.copy()
             data, _ = raw_copy[local_index_channels, t_min: t_max]
             data = data[:, ::nSmaple]
-            ret = ['1', data, local_sampling_rate]
+            ret = ['1', data, local_sampling_rate,recording_additional]
             print(f"readEEGfile：ok:len(data)={len(data)}")
         except Exception as e:
             ret = ['0', f'读数据块raw_copy不成功:{e}.']
