@@ -1201,10 +1201,10 @@ class server(socketServer):
         patient = self.dbUtil.getPatientInfo(where_name='patient_id', where_value=patient_id)[0]
         type_info = self.dbUtil.get_typeInfo()
         montage = []
-        labels = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, 0, lenBlock)
-        for label in labels:
-            label[2] // nSample
-            label[3] // nSample
+        tempt = self.dbUtil.getWinSampleInfo(tableName, check_id, file_id, 0, lenBlock)
+        labels=[]
+        for label in tempt:
+            labels.append([label[0],label[1]// nSample,label[2] // nSample,label[3]])
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件成功', "", '']
         ret = ['1', REQmsg[1], [patient, type_info, montage, eeg[1], eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[7], lenBlock // nSample, nSample, lenWin, data[1], labels]]
         return msgtip, ret
