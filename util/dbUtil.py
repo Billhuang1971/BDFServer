@@ -3144,8 +3144,8 @@ class dbUtil(MySqlService):
             labelBit = np.zeros(nDotWin + 1, dtype=bool)
             for sample in samples:
                 sample = list(sample)
-                labelBit[sample[1] * nDotWin // lenFile] = True
-                labelBit[sample[2] * nDotWin // lenFile] = True
+                l, r = sample[1] * nDotWin // lenFile, sample[2] * nDotWin // lenFile
+                labelBit[l: r + 1] = True
                 if sample[1] < end:
                     sample[1] = sample[1] // nSample
                     sample[2] = sample[2] // nSample
@@ -3154,6 +3154,20 @@ class dbUtil(MySqlService):
         except Exception as err:
             print(err)
             return [], []
+
+    def insertSample(self, label, tableName):
+        try:
+            sql = f"insert into {tableName} (channel, begin, end, type_id, check_id, file_id, uid) values ('{label[0]}', {label[1]}, {label[2]}, {label[3]}, {label[4]}, {label[5]}, {label[6]})"
+            print(sql)
+            tag = self.myExecuteSql(sql)
+            if tag == '':
+                return '1'
+            else:
+                return '0'
+        except Exception as re:
+            print(re)
+            return '0'
+
 
 if __name__ == '__main__':
     dbUtil = dbUtil()

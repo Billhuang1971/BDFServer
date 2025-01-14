@@ -1167,6 +1167,9 @@ class server(socketServer):
             elif cmd == 'EEG' and cmdID == 1:
                 tipmsg, ret = self.loadEEGData(macAddr, REQmsg)
                 REQmsg[3] = ret
+            elif cmd == 'EEG' and cmdID == 2:
+                tipmsg, ret = self.insertSample(macAddr, REQmsg)
+                REQmsg[3] = ret
 
             else:
                 REQmsg[3] = ['0', REQmsg[1], f'未定义命令{REQmsg[1]}']
@@ -1234,6 +1237,18 @@ class server(socketServer):
             label[3] // nSample
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '获取脑电数据成功', "", '']
         ret = ['1', REQmsg[1], [data, labels]]
+        return msgtip, ret
+
+    def insertSample(self,  macAddr, REQmsg):
+        msg = REQmsg[3]
+        label = msg[0]
+        tableName = msg[1]
+        if self.dbUtil.insertSample(label, tableName) == '0':
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '插入样本消息失败', "", '']
+            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}插入样本消息失败"]
+        else:
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '获取脑电数据成功', "", '']
+            ret = ['1', REQmsg[1], []]
         return msgtip, ret
 
 
