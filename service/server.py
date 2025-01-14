@@ -1205,7 +1205,7 @@ class server(socketServer):
         tempt, labelBit = self.dbUtil.labFirst(tableName, check_id, file_id, lenBlock, user_id, nSecWin * nDotSec, eeg[4], nSample)
         labels=[]
         for label in tempt:
-            labels.append([label[0],label[1]// nSample,label[2] // nSample,label[3]])
+            labels.append([label[0],label[1],label[2]])
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件成功', "", '']
         ret = ['1', REQmsg[1], [patient, type_info, montage, eeg[1], eeg[2], eeg[3], eeg[4], eeg[5], eeg[6], eeg[7], lenBlock // nSample, nSample, lenWin, data[1], labels, labelBit]]
         return msgtip, ret
