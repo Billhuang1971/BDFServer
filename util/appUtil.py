@@ -9,7 +9,7 @@ import re
 import mne
 import pyedflib
 import pypinyin
-
+import numpy as np
 import urllib
 import urllib.request
 import smtplib
@@ -151,6 +151,7 @@ class appUtil():
         try:
             raw_copy = local_raw.copy()
             data, _ = raw_copy[local_index_channels, t_min: t_max]
+            g_spacing=self.adjust_spacing(data,t_min,t_max)
             data = data[:, ::nSmaple]
             ret = ['1', data, local_sampling_rate,recording_additional]
             print(f"readEEGfile：ok:len(data)={len(data)}")
@@ -161,6 +162,114 @@ class appUtil():
         local_raw.close()
         return ret
 
+    def adjust_spacing(data, lowlim, highlim): #data ，起始点下标，终止点下标
+        # 计算每个通道的标准差
+        stds = np.std(data[:, lowlim:highlim], axis=1)
+        # 排序并去除最小和最大值
+        stds_sorted = np.sort(stds)
+        if len(stds_sorted) > 2:
+            stds_filtered = stds_sorted[1:-1]  # 去掉最小和最大值
+            mean_std = np.mean(stds_filtered)
+        else:
+            mean_std = np.mean(stds_sorted)  # 如果通道数量小于等于2，直接取平均值
+        # 设置 g.spacing 为标准差乘以系数
+        g_spacing = mean_std * 3
+
+        # 确保 g.spacing 在合理范围内
+        if g_spacing == 0 or np.isnan(g_spacing):
+            g_spacing = 1
+        if g_spacing > 10:
+            g_spacing = round(g_spacing)
+
+        return g_spacing
+
+    def adjust_signal_position(data, g_spacing, g_elec_offset, g_disp_chans, total_channels):
+        """
+        调整EEG信号在Y轴上的显示位置。
+        参数:
+        data -- EEG信号数据，每行代表一个通道，每列代表一个时间点
+        g_spacing -- 垂直间距，控制通道间的间隔
+        g_elec_offset -- 电极偏移量，控制所有通道的起始垂直位置
+        g_disp_chans -- 显示的通道数
+        total_channels -- 总通道数
+        返回:
+        adjusted_data -- 调整后的EEG信号数据
+        y_positions -- 每个通道的Y轴位置
+        """
+        # 获取EEG信号的维度
+        num_channels, num_samples = data.shape  # data.shape 是 (通道数, 时间点数)
+        # 确保 g.elecoffset 在合理范围内
+        if g_elec_offset < 0:
+            g_elec_offset = 0
+        elif g_elec_offset + g_disp_chans > total_channels:
+            g_elec_offset = total_channels - g_disp_chans
+        # 计算每个通道的Y轴位置
+        y_positions = np.arange(g_elec_offset, g_elec_offset + g_disp_chans) * g_spacing
+        # 调整每个通道的信号位置
+        adjusted_data = np.zeros_like(data)
+        for i in range(g_disp_chans):
+            channel_data = data[i, :]  # 获取第i个通道的数据
+            # 根据Y轴位置调整信号
+            adjusted_data[i, :] = channel_data + y_positions[i]
+        return adjusted_data, y_positions
+
+    def remove_mean(data, lowlim, highlim, g_submean):
+        """
+        如果 g.submean 是 'on'，从信号中去除均值。
+
+        参数:
+        data -- EEG信号数据，格式为 (通道数, 时间点数)
+        lowlim -- 数据开始点
+        highlim -- 数据结束点
+        g_submean -- 是否去均值操作
+
+        返回:
+        data_no_mean -- 去均值后的EEG数据
+        """
+        if g_submean == 'on':
+            # 计算每个通道在指定区间的均值
+            mean_data = np.mean(data[:, lowlim:highlim], axis=1)
+            # 从每个通道的信号中减去均值
+            data_no_mean = data - mean_data[:, np.newaxis]
+        else:
+            data_no_mean = data  # 不进行去均值操作
+
+        return data_no_mean
+
+    def set_yaxis_limits(g_spacing, g_chans):
+        """
+        设置Y轴的显示范围。
+
+        参数:
+        g_spacing -- 每个通道之间的垂直间距
+        g_chans -- 总通道数
+
+        返回:
+        y_lim -- Y轴的范围
+        """
+        y_lim = (0, (g_chans + 1) * g_spacing)  # Y轴的最大值是 (g.chans + 1) * g.spacing
+        return y_lim
+
+    def set_xaxis_labels_and_ticks(alltag, g_trialstag, g_srate, g_limits):
+        """
+        计算X轴的标签和标记的位置。
+
+        参数:
+        alltag -- 事件的时间标记
+        g_trialstag -- 试验的时间步长
+        g_srate -- 采样率
+        g_limits -- 当前显示时间范围
+
+        返回:
+        x_ticks -- X轴上的刻度位置
+        x_labels -- X轴上的标签
+        """
+        # 计算X轴刻度位置
+        x_ticks = alltag - g_limits[0] + g_trialstag / 2
+        # 计算X轴标签
+        x_labels = [str(int(tag)) for tag in x_ticks]
+
+        return x_ticks, x_labels
     def closeEEGfile(self,raw):
         raw.close()
         return
