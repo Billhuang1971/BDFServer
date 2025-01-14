@@ -1,6 +1,8 @@
 import re
 from random import sample
 
+import numpy as np
+
 from util.mysqlService import MySqlService
 
 
@@ -3125,14 +3127,33 @@ class dbUtil(MySqlService):
             print(re)
             return '0', str(re)
 
-    def getWinSampleInfo(self, table_name, check_id, file_id, begin, end):
+    def getWinSampleInfo(self, table_name, check_id, file_id, begin, end, user_id):
         try:
-            sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and begin >= {begin} and end < {end}"
+            sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and begin >= {begin} and end < {end} order by begin"
             sample = self.myQuery(sql)
             return sample
         except Exception as re:
             print(re)
             return []
+
+    def labFirst(self, table_name, check_id, file_id, end, user_id, nDotWin, lenFile, nSample):
+        try:
+            sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} order by begin"
+            samples = self.myQuery(sql)
+            labels = []
+            labelBit = np.zeros(nDotWin + 1, dtype=bool)
+            for sample in samples:
+                sample = list(sample)
+                labelBit[sample[1] * nDotWin // lenFile] = True
+                labelBit[sample[2] * nDotWin // lenFile] = True
+                if sample[1] < end:
+                    sample[1] = sample[1] // nSample
+                    sample[2] = sample[2] // nSample
+                    labels.append(sample)
+            return labels, labelBit
+        except Exception as err:
+            print(err)
+            return [], []
 
 if __name__ == '__main__':
     dbUtil = dbUtil()
