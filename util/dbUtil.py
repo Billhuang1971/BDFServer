@@ -3134,14 +3134,10 @@ class dbUtil(MySqlService):
             labels = []
             for sample in samples:
                 sample = list(sample)
-                if sample[2] <= begin:
-                    continue
-                if sample[1] >= end:
-                    break
-                sample[1] = sample[1] // nSample
-                sample[2] = sample[2] // nSample
-                labels.append(sample)
-            print(labels)
+                if sample[1] >= begin and sample[1] < end:
+                    sample[1] = sample[1] // nSample
+                    sample[2] = sample[2] // nSample
+                    labels.append(sample)
             return labels
         except Exception as re:
             print(re)
