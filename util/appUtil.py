@@ -151,6 +151,7 @@ class appUtil():
         try:
             raw_copy = local_raw.copy()
             data, _ = raw_copy[local_index_channels, t_min: t_max]
+            data = data * pow(10, 6)
             data = data[:, ::nSmaple]
             ret = ['1', data, local_sampling_rate,recording_additional]
             print(f"readEEGfile：ok:len(data)={len(data)}")
