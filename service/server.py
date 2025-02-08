@@ -1220,9 +1220,9 @@ class server(socketServer):
                 # 将结果转换为列表形式
         else:
             ieeg = True
-            montage={}
+            montage = {}
         tempt, labelBit = self.dbUtil.labFirst(tableName, check_id, file_id, lenBlock, user_id, nSecWin * nDotSec, eeg[4], nSample)
-        labels=[]
+        labels = []
         for label in tempt:
             labels.append([label[0],label[1],label[2],label[3]])
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件成功', "", '']
@@ -1253,6 +1253,13 @@ class server(socketServer):
         msg = REQmsg[3]
         label = msg[0]
         tableName = msg[1]
+        check_id = msg[2]
+        file_id = msg[3]
+        user_id = msg[4]
+        nSample = msg[5]
+        label[1] *= nSample
+        label[2] *= nSample
+        label.extend([check_id, file_id, user_id])
         if self.dbUtil.insertSample(label, tableName) == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '插入样本消息失败', "", '']
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}插入样本消息失败"]

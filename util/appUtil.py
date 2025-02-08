@@ -123,7 +123,7 @@ class appUtil():
         try:
             package='{:>011}'.format(check_id)
             fileNm = '{:>03}.bdf'.format(file_id)
-            path = os.path.join(self.root_path,'data', 'formated_data', package, fileNm)
+            path = os.path.join(self.root_path, 'data', 'formated_data', package, fileNm)
             # 读取BDF文件标识
             with pyedflib.EdfReader(path) as reader:
                 # 内部属性包含 recording 字段
