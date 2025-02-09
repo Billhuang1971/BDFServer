@@ -153,7 +153,7 @@ class appUtil():
             data, _ = raw_copy[local_index_channels, t_min: t_max]
             data = data * pow(10, 6)
             data = data[:, ::nSmaple]
-            ret = ['1', data, local_sampling_rate,recording_additional]
+            ret = ['1', data, local_sampling_rate, recording_additional]
             print(f"readEEGfile：ok:len(data)={len(data)}")
         except Exception as e:
             ret = ['0', f'读数据块raw_copy不成功:{e}.']
@@ -226,7 +226,11 @@ class appUtil():
             return ret
         try:
             local_channels = local_raw.info['ch_names']
-            local_index_channels = mne.pick_channels(local_channels, include=[])
+            local_index_channels = mne.pick_channels(local_channels, include=local_channels)
+            channels_index = {}
+            for i in range(len(local_channels)):
+                channels_index[local_channels[i].split('-')[0]] = int(local_index_channels[i])
+
             local_sampling_rate = int(local_raw.info['sfreq'])
             local_n_times = local_raw.n_times
             local_duration = int(local_n_times // local_sampling_rate)
@@ -237,7 +241,7 @@ class appUtil():
             local_end_time = meas_date + datetime.timedelta(seconds=local_duration)
             local_end_time = local_end_time.strftime('%H:%M:%S')
 
-            ret = ['1', local_channels, local_index_channels,
+            ret = ['1', local_channels, channels_index,
                local_sampling_rate, local_n_times, local_duration, local_start_time, local_end_time]
             local_raw.close()
             return ret
