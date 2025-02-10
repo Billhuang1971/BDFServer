@@ -1209,7 +1209,7 @@ class server(socketServer):
             montageRaw = self.appUtil.getMontage()
             # montage={'导联名’:[对应通道]}
             montage = {}
-            key = 'defualt'
+            key = 'default'
             montage[key] = eeg[1] #添加缺省导联
             for entry in montageRaw[1]:
                 name = entry['name']
