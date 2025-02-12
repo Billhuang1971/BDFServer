@@ -3164,7 +3164,7 @@ class dbUtil(MySqlService):
 
     def insertSample(self, label, tableName):
         try:
-            sql = f"insert into {tableName} (channel, begin, end, type_id, check_id, file_id, uid) values ('{label[0]}', {label[1]}, {label[2]}, {label[3]}, {label[4]}, {label[5]}, {label[6]})"
+            sql = f'insert into {tableName} (channel, begin, end, type_id, check_id, file_id, uid) values ("{label[0]}", {label[1]}, {label[2]}, {label[3]}, {label[4]}, {label[5]}, {label[6]})'
             print(sql)
             tag = self.myExecuteSql(sql)
             if tag == '':

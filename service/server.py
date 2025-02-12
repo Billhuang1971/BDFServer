@@ -1260,12 +1260,15 @@ class server(socketServer):
         label[1] *= nSample
         label[2] *= nSample
         label.extend([check_id, file_id, user_id])
+        cmd = 1
+        if label[0] == 'all':
+            cmd = 2 if label[1] != label[2] else 3
         if self.dbUtil.insertSample(label, tableName) == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '插入样本消息失败', "", '']
-            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}插入样本消息失败"]
+            ret = ['0', REQmsg[1], 0]
         else:
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '获取脑电数据成功', "", '']
-            ret = ['1', REQmsg[1], []]
+            ret = ['1', REQmsg[1], [cmd, label[3]]]
         return msgtip, ret
 
 
