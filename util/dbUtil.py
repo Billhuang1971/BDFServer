@@ -3165,7 +3165,30 @@ class dbUtil(MySqlService):
     def insertSample(self, label, tableName):
         try:
             sql = f'insert into {tableName} (channel, begin, end, type_id, check_id, file_id, uid) values ("{label[0]}", {label[1]}, {label[2]}, {label[3]}, {label[4]}, {label[5]}, {label[6]})'
-            print(sql)
+            tag = self.myExecuteSql(sql)
+            if tag == '':
+                return '1'
+            else:
+                return '0'
+        except Exception as re:
+            print(re)
+            return '0'
+
+    def updateSample(self, label, tableName):
+        try:
+            sql = f'update {tableName} set type_id = {label[3]} where channel = "{label[0]}" and begin = {label[1]} and end = {label[2]} and check_id = {label[4]} and file_id = {label[5]} and uid = {label[6]}'
+            tag = self.myExecuteSql(sql)
+            if tag == '':
+                return '1'
+            else:
+                return '0'
+        except Exception as re:
+            print(re)
+            return '0'
+
+    def deleteSample(self, label, tableName):
+        try:
+            sql = f'delete from {tableName} where channel = "{label[0]}" and begin = {label[1]} and end = {label[2]} and check_id = {label[4]} and file_id = {label[5]} and uid = {label[6]}'
             tag = self.myExecuteSql(sql)
             if tag == '':
                 return '1'

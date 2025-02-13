@@ -1170,6 +1170,12 @@ class server(socketServer):
             elif cmd == 'EEG' and cmdID == 2:
                 tipmsg, ret = self.insertSample(macAddr, REQmsg)
                 REQmsg[3] = ret
+            elif cmd == 'EEG' and cmdID == 3:
+                tipmsg, ret = self.updateSample(macAddr, REQmsg)
+                REQmsg[3] = ret
+            elif cmd == 'EEG' and cmdID == 4:
+                tipmsg, ret = self.deleteSample(macAddr, REQmsg)
+                REQmsg[3] = ret
 
             else:
                 REQmsg[3] = ['0', REQmsg[1], f'未定义命令{REQmsg[1]}']
@@ -1249,7 +1255,7 @@ class server(socketServer):
         ret = ['1', REQmsg[1], [data, labels]]
         return msgtip, ret
 
-    def insertSample(self,  macAddr, REQmsg):
+    def insertSample(self, macAddr, REQmsg):
         msg = REQmsg[3]
         label = msg[0]
         tableName = msg[1]
@@ -1267,9 +1273,48 @@ class server(socketServer):
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '插入样本消息失败', "", '']
             ret = ['0', REQmsg[1], 0]
         else:
-            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '获取脑电数据成功', "", '']
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '插入样本消息成功', "", '']
             ret = ['1', REQmsg[1], [cmd, label[3]]]
         return msgtip, ret
+
+    def updateSample(self, macAddr, REQmsg):
+        msg = REQmsg[3]
+        label = msg[0]
+        tableName = msg[1]
+        check_id = msg[2]
+        file_id = msg[3]
+        user_id = msg[4]
+        nSample = msg[5]
+        label[1] *= nSample
+        label[2] *= nSample
+        label.extend([check_id, file_id, user_id])
+        if self.dbUtil.updateSample(label, tableName) == '0':
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '更新样本消息失败', "", '']
+            ret = ['0', REQmsg[1], 0]
+        else:
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '更新样本消息成功', "", '']
+            ret = ['1', REQmsg[1], [label[3]]]
+        return msgtip, ret
+
+    def deleteSample(self, macAddr, REQmsg):
+        msg = REQmsg[3]
+        label = msg[0]
+        tableName = msg[1]
+        check_id = msg[2]
+        file_id = msg[3]
+        user_id = msg[4]
+        nSample = msg[5]
+        label[1] *= nSample
+        label[2] *= nSample
+        label.extend([check_id, file_id, user_id])
+        if self.dbUtil.deleteSample(label, tableName) == '0':
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '删除样本消息失败', "", '']
+            ret = ['0', REQmsg[1], 0]
+        else:
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '删除样本消息成功', "", '']
+            ret = ['1', REQmsg[1], []]
+        return msgtip, ret
+
 
 
     def login(self, userAccount, pwd, macAddr):
