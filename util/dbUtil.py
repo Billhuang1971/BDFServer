@@ -3198,6 +3198,15 @@ class dbUtil(MySqlService):
             print(re)
             return '0'
 
+    def getLabelBit(self, table_name, check_id, file_id, user_id, nDotWin, lenFile):
+        sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} order by begin"
+        samples = self.myQuery(sql)
+        labelBit = np.zeros(nDotWin + 1, dtype=bool)
+        for sample in samples:
+            l, r = sample[1] * nDotWin // lenFile, sample[2] * nDotWin // lenFile
+            labelBit[l: r + 1] = True
+        return labelBit
+
 
 if __name__ == '__main__':
     dbUtil = dbUtil()

@@ -1304,15 +1304,18 @@ class server(socketServer):
         file_id = msg[3]
         user_id = msg[4]
         nSample = msg[5]
+        nDotWin = msg[6]
+        lenFile = msg[7]
         label[1] *= nSample
         label[2] *= nSample
         label.extend([check_id, file_id, user_id])
         if self.dbUtil.deleteSample(label, tableName) == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '删除样本消息失败', "", '']
             ret = ['0', REQmsg[1], 0]
-        else:
-            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '删除样本消息成功', "", '']
-            ret = ['1', REQmsg[1], []]
+            return msgtip, ret
+        labelBit = self.dbUtil.getLabelBit(tableName, check_id, file_id, user_id, nDotWin, lenFile)
+        msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '删除样本消息成功', "", '']
+        ret = ['1', REQmsg[1], [labelBit]]
         return msgtip, ret
 
 
