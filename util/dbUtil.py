@@ -3207,6 +3207,23 @@ class dbUtil(MySqlService):
             labelBit[l: r + 1] = True
         return labelBit
 
+    def getState(self, class_id, uid):
+        sql = f'select state from student where class_id = {class_id} and uid = {uid}'
+        state = self.myQuery(sql)[0]
+        return state
+
+    def updateState(self, class_id, uid):
+        sql = f'update student set state="tested" where class_id = {class_id} and uid = {uid}'
+        self.myExecuteSql(sql)
+
+    def getAllSampleByFile(self, check_id, file_id, Puid):
+        sql = f'select channel, begin, end from sample_info where check_id = {check_id} and file_id = {file_id} and uid = {Puid}'
+        samples = self.myQuery(sql)
+        return samples
+
+    def addResult(self, check_id, file_id, uid, channel, begin, end):
+        sql = f'insert into result (check_id, file_id, uid, channel, begin, end) values ({check_id}, {file_id}, {uid}, "{channel}", {begin}, {end})'
+        self.myExecuteSql(sql)
 
 if __name__ == '__main__':
     dbUtil = dbUtil()

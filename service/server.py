@@ -522,6 +522,9 @@ class server(socketServer):
             elif cmd == 'diagTest' and cmdID == 28:
                 tipmsg, ret = self.dt_diagTest_commit(clientAddr, REQmsg)
                 REQmsg[3] = ret
+            elif cmd == 'diagTest' and cmdID == 29:
+                tipmsg, ret = self.checkTested(clientAddr, REQmsg)
+                REQmsg[3] = ret
 
             # 诊断学习/提取诊断信息
             elif cmd == 'diagTraining' and cmdID == 1:
@@ -3975,6 +3978,20 @@ class server(socketServer):
         else:
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}未定义命令"]
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '未定义命令', '']
+        return msgtip, ret
+
+    def checkTested(self, clientAddr, REQmsg):
+        check_id = REQmsg[3][0]
+        file_id = REQmsg[3][1]
+        Puid = REQmsg[3][2]
+        class_id = REQmsg[3][3]
+        uid = REQmsg[3][4]
+        self.dbUtil.updateState(class_id, uid)
+        samples = self.dbUtil.getAllSampleByFile(check_id, file_id, Puid)
+        for sample in samples:
+            self.dbUtil.addResult(check_id, file_id, uid, sample[0], sample[1], sample[2])
+        ret = ['0', REQmsg[1], []]
+        msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '检查学习测试', '成功']
         return msgtip, ret
 
     # 学习测试/完成学习测试

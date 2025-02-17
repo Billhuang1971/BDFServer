@@ -29,11 +29,11 @@ class curUser:
             'researcherF': [3, 4, 5, 7, 12, 15, 17, 18, 19, 20],
             'adminT': ['pwd', 'userManager', 'quit', 'logout', 'labelType', 'basicConfig', 'montage'],
             'labelerT': ['pwd', 'quit', 'logout', 'configOptions', 'reserching'],
-            'studentT': ['pwd', 'quit', 'logout','diagTest','diagTraining','testAssess'],
-            'teacherT': ['pwd', 'quit', 'logout', 'configOptions', 'manualQuery', 'consulting', 'createLesson','testAssess','reserching', 'patientManager'],
+            'studentT': ['pwd', 'quit', 'logout', 'diagTest', 'diagTraining', 'testAssess', "EEG"],
+            'teacherT': ['pwd', 'quit', 'logout', 'configOptions', 'manualQuery', 'consulting', 'createLesson','testAssess','reserching', 'patientManager', "EEG"],
             'doctorT': ['pwd', 'quit', 'logout', 'patientManager', 'configOptions', 'manual', 'manualQuery',
-                        'consulting', 'createCons', 'dataImport','testAssess','reserching', 'EEG' ],
-            'researcherT': ['pwd', 'quit', 'logout', 'configOptions', 'manualQuery', 'consulting', 'reserching','reserchingQuery', 'setBuild','delSet_info', 'algorithm', 'taskSettings', 'modelTrain', 'classifier', 'sampleState', 'patientManager', 'modelTest', 'detailLook', 'auto', 'clearLabel', 'assessLabel'],
+                        'consulting', 'createCons', 'dataImport','testAssess','reserching', 'EEG'],
+            'researcherT': ['pwd', 'quit', 'logout', 'configOptions', 'manualQuery', 'consulting', 'reserching','reserchingQuery', 'setBuild','delSet_info', 'algorithm', 'taskSettings', 'modelTrain', 'classifier', 'sampleState', 'patientManager', 'modelTest', 'detailLook', 'auto', 'clearLabel', 'assessLabel', "EEG"],
         }
 
     def login(self, userAccount, pwd, macAddr):
