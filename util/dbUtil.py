@@ -3127,9 +3127,16 @@ class dbUtil(MySqlService):
             print(re)
             return '0', str(re)
 
-    def getWinSampleInfo(self, table_name, check_id, file_id, begin, end, user_id, nSample):
+    def getWinSampleInfo(self, table_name, check_id, file_id, begin, end, user_id, nSample, fKey):
         try:
-            sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} order by begin"
+            if fKey is None:
+                sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} order by begin"
+            elif table_name == 'result':
+                sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and class_id = {fKey} order by begin"
+            elif table_name == 'reslab':
+                sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and theme_id = {fKey} order by begin"
+            else:
+                return []
             samples = self.myQuery(sql)
             labels = []
             for sample in samples:
@@ -3143,9 +3150,16 @@ class dbUtil(MySqlService):
             print(re)
             return []
 
-    def labFirst(self, table_name, check_id, file_id, end, user_id, nDotWin, lenFile, nSample):
+    def labFirst(self, table_name, check_id, file_id, end, user_id, nDotWin, lenFile, nSample, fKey):
         try:
-            sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} order by begin"
+            if fKey is None:
+                sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} order by begin"
+            elif table_name == 'result':
+                sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and class_id = {fKey} order by begin"
+            elif table_name == 'reslab':
+                sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and theme_id = {fKey} order by begin"
+            else:
+                return [], []
             samples = self.myQuery(sql)
             labels = []
             labelBit = np.zeros(nDotWin + 1, dtype=bool)
