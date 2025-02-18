@@ -1388,9 +1388,8 @@ class dbUtil(MySqlService):
 
     # 诊断学习，结束本次诊断信息学习
 
-    def dl_study_end(self, class_id, uid, start_time):
-        sql = f"update study  set end=current_timestamp()  where class_id={class_id} and uid={uid} and " \
-              f" start='{start_time}'"
+    def dl_study_end(self, class_id, uid, start_time, end_time):
+        sql = f"insert into study (class_id, uid, start,end) VALUES ({class_id}, {uid}, '{start_time}', '{end_time}')"
         try:
             dataSet = self.myExecuteSql(sql)
         except Exception as re:

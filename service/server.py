@@ -4215,19 +4215,22 @@ class server(socketServer):
         return msgtip, ret
 
     # 诊断学习/添加学习记录，并统计时长，处理完成状态
-    def study_add(self, class_id, uid, start_time):
-        r, d = self.dbUtil.dl_study_end(class_id, uid, start_time)
+    def study_add(self, class_id, uid, start_time, end_time):
+        r, d = self.dbUtil.dl_study_end(class_id, uid, start_time, end_time)
         if r == '1':
             r, st = self.dbUtil.dl_student_get(class_id, uid)
-            if r == '1' and len(st) == 1 and st[0][2] == 'studying':
+            if r == '1' and len(st) == 1:
                 sql = "SELECT sum(hour(TIMEDIFF(end,start))*360+ minute(TIMEDIFF(end,start))*60+second(TIMEDIFF(end,start)))/60 FROM study where end>start " \
                       f" and class_id={class_id} and uid = {uid}"
                 sttime = self.dbUtil.myQuery(sql)
                 sql = f"SELECT time FROM class where class_id={class_id} "
                 cltime = self.dbUtil.myQuery(sql)
                 if sttime is not None and cltime is not None:
-                    if cltime[0][0] <= sttime[0][0]:
+                    if cltime[0][0] <= sttime[0][0] and st[0][2] != 'studied':
                         self.dbUtil.dl_student_update(class_id, uid, "state = 'studied'")
+                    elif st[0][2] != 'studying':
+                        self.dbUtil.dl_student_update(class_id, uid, "state = 'studying'")
+
         return r, d
 
     # 诊断学习/结束计时
@@ -4235,7 +4238,7 @@ class server(socketServer):
         if REQmsg[1] == 3:
             class_id = REQmsg[3][0]
             uid = REQmsg[3][1]
-            r, d = self.study_add(class_id, uid, REQmsg[3][2])
+            r, d = self.study_add(class_id, uid, REQmsg[3][2], REQmsg[3][3])
             if r == '0':
                 ret = [r, d]
                 msgtip = [REQmsg[2], f"应答:诊断学习/更新学习结束时间", '数据库操作', "不成功", ""]
