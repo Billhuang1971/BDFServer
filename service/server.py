@@ -525,6 +525,9 @@ class server(socketServer):
             elif cmd == 'diagTest' and cmdID == 29:
                 tipmsg, ret = self.checkTested(clientAddr, REQmsg)
                 REQmsg[3] = ret
+            elif cmd == 'diagTest' and cmdID == 30:
+                tipmsg, ret = self.updateState(clientAddr, REQmsg)
+                REQmsg[3] = ret
 
             # 诊断学习/提取诊断信息
             elif cmd == 'diagTraining' and cmdID == 1:
@@ -1290,10 +1293,11 @@ class server(socketServer):
         file_id = msg[3]
         user_id = msg[4]
         nSample = msg[5]
+        fKey = msg[6]
         label[1] *= nSample
         label[2] *= nSample
         label.extend([check_id, file_id, user_id])
-        if self.dbUtil.updateSample(label, tableName) == '0':
+        if self.dbUtil.updateSample(label, tableName, fKey) == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '更新样本消息失败', "", '']
             ret = ['0', REQmsg[1], 0]
         else:
@@ -3982,16 +3986,26 @@ class server(socketServer):
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '未定义命令', '']
         return msgtip, ret
 
+    def updateState(self, clientAddr, REQmsg):
+        class_id = REQmsg[3][0]
+        uid = REQmsg[3][1]
+        self.dbUtil.updateState(class_id, uid, 'tested')
+        ret = ['1', REQmsg[1], []]
+        msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '修改学习状态', '成功']
+        return msgtip, ret
+
     def checkTested(self, clientAddr, REQmsg):
         check_id = REQmsg[3][0]
         file_id = REQmsg[3][1]
         Puid = REQmsg[3][2]
         class_id = REQmsg[3][3]
         uid = REQmsg[3][4]
-        self.dbUtil.updateState(class_id, uid)
-        samples = self.dbUtil.getAllSampleByFile(check_id, file_id, Puid)
-        for sample in samples:
-            self.dbUtil.addResult(check_id, file_id, uid, sample[0], sample[1], sample[2])
+        state = self.dbUtil.getState(class_id, uid)
+        if state == 'studied':
+            self.dbUtil.updateState(class_id, uid, 'testing')
+            samples = self.dbUtil.getAllSampleByFile(check_id, file_id, Puid)
+            for sample in samples:
+                self.dbUtil.addResult(class_id, check_id, file_id, uid, sample[0], sample[1], sample[2])
         ret = ['0', REQmsg[1], []]
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '检查学习测试', '成功']
         return msgtip, ret

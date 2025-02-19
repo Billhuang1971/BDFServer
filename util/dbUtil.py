@@ -3187,9 +3187,12 @@ class dbUtil(MySqlService):
             print(re)
             return '0'
 
-    def updateSample(self, label, tableName):
+    def updateSample(self, label, tableName, class_id):
         try:
-            sql = f'update {tableName} set type_id = {label[3]} where channel = "{label[0]}" and begin = {label[1]} and end = {label[2]} and check_id = {label[4]} and file_id = {label[5]} and uid = {label[6]}'
+            if class_id is None:
+                sql = f'update {tableName} set type_id = {label[3]} where channel = "{label[0]}" and begin = {label[1]} and end = {label[2]} and check_id = {label[4]} and file_id = {label[5]} and uid = {label[6]}'
+            else:
+                sql = f'update {tableName} set type_id = {label[3]} where channel = "{label[0]}" and begin = {label[1]} and end = {label[2]} and check_id = {label[4]} and file_id = {label[5]} and uid = {label[6]} and class_id = {class_id}'
             tag = self.myExecuteSql(sql)
             if tag == '':
                 return '1'
@@ -3222,11 +3225,11 @@ class dbUtil(MySqlService):
 
     def getState(self, class_id, uid):
         sql = f'select state from student where class_id = {class_id} and uid = {uid}'
-        state = self.myQuery(sql)[0]
+        state = self.myQuery(sql)[0][0]
         return state
 
-    def updateState(self, class_id, uid):
-        sql = f'update student set state="tested" where class_id = {class_id} and uid = {uid}'
+    def updateState(self, class_id, uid, state):
+        sql = f'update student set state="{state}" where class_id = {class_id} and uid = {uid}'
         self.myExecuteSql(sql)
 
     def getAllSampleByFile(self, check_id, file_id, Puid):
@@ -3234,8 +3237,8 @@ class dbUtil(MySqlService):
         samples = self.myQuery(sql)
         return samples
 
-    def addResult(self, check_id, file_id, uid, channel, begin, end):
-        sql = f'insert into result (check_id, file_id, uid, channel, begin, end) values ({check_id}, {file_id}, {uid}, "{channel}", {begin}, {end})'
+    def addResult(self, class_id, check_id, file_id, uid, channel, begin, end):
+        sql = f'insert into result (class_id, check_id, file_id, uid, channel, begin, end) values ({class_id}, {check_id}, {file_id}, {uid}, "{channel}", {begin}, {end})'
         self.myExecuteSql(sql)
 
 if __name__ == '__main__':
