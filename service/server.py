@@ -526,7 +526,7 @@ class server(socketServer):
                 tipmsg, ret = self.checkTested(clientAddr, REQmsg)
                 REQmsg[3] = ret
             elif cmd == 'diagTest' and cmdID == 30:
-                tipmsg, ret = self.updateState(clientAddr, REQmsg)
+                tipmsg, ret = self.testOver(clientAddr, REQmsg)
                 REQmsg[3] = ret
 
             # 诊断学习/提取诊断信息
@@ -3986,10 +3986,21 @@ class server(socketServer):
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '未定义命令', '']
         return msgtip, ret
 
-    def updateState(self, clientAddr, REQmsg):
+    def testOver(self, clientAddr, REQmsg):
         class_id = REQmsg[3][0]
-        uid = REQmsg[3][1]
-        self.dbUtil.updateState(class_id, uid, 'tested')
+        check_id = REQmsg[3][1]
+        file_id = REQmsg[3][2]
+        Puid = REQmsg[3][3]
+        uid = REQmsg[3][4]
+        samples1 = self.dbUtil.getAllSampleByFile(check_id, file_id, Puid)
+        samples2 = self.dbUtil.getSamplesFromResult(check_id, file_id, uid, class_id)
+        grade = 0
+        for sample1 in samples1:
+            for sample2 in samples2:
+                if sample1[0] == sample2[0] and sample1[1] == sample2[1] and sample1[2] == sample2[2]:
+                    grade += 1 if sample1[3] == sample2[3] else 0
+                    break
+        self.dbUtil.updateState(class_id, uid, 'tested', round(100 * grade / len(samples1)))
         ret = ['1', REQmsg[1], []]
         msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '修改学习状态', '成功']
         return msgtip, ret

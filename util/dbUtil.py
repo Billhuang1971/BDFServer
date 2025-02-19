@@ -3228,18 +3228,26 @@ class dbUtil(MySqlService):
         state = self.myQuery(sql)[0][0]
         return state
 
-    def updateState(self, class_id, uid, state):
-        sql = f'update student set state="{state}" where class_id = {class_id} and uid = {uid}'
+    def updateState(self, class_id, uid, state, grade=None):
+        if grade is None:
+            sql = f'update student set state="{state}" where class_id = {class_id} and uid = {uid}'
+        else:
+            sql = f'update student set state="{state}", grade={grade} where class_id = {class_id} and uid = {uid}'
         self.myExecuteSql(sql)
 
     def getAllSampleByFile(self, check_id, file_id, Puid):
-        sql = f'select channel, begin, end from sample_info where check_id = {check_id} and file_id = {file_id} and uid = {Puid}'
+        sql = f'select channel, begin, end, type_id from sample_info where check_id = {check_id} and file_id = {file_id} and uid = {Puid}'
         samples = self.myQuery(sql)
         return samples
 
     def addResult(self, class_id, check_id, file_id, uid, channel, begin, end):
         sql = f'insert into result (class_id, check_id, file_id, uid, channel, begin, end) values ({class_id}, {check_id}, {file_id}, {uid}, "{channel}", {begin}, {end})'
         self.myExecuteSql(sql)
+
+    def getSamplesFromResult(self, check_id, file_id, uid, class_id):
+        sql = f'select channel, begin, end, type_id from result where check_id = {check_id} and file_id = {file_id} and uid = {uid} and class_id = {class_id}'
+        samples = self.myQuery(sql)
+        return samples
 
 if __name__ == '__main__':
     dbUtil = dbUtil()
