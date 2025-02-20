@@ -1209,7 +1209,6 @@ class server(socketServer):
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '打开脑电文件失败', "", '']
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}打开脑电文件失败"]
             return msgtip, ret
-
         lenBlock = min(nSecWin * nWinBlock * eeg[3], eeg[4])
         nSample = 1 if nDotSec >= eeg[3] else int(round(eeg[3] / nDotSec))
         lenWin = nSecWin * eeg[3] // nSample
@@ -3723,6 +3722,7 @@ class server(socketServer):
             sql_where = f"  theme.state!='creating' and  task.uid={_uid} and (task.state='notStarted' or task.state='labelling') "
             #sql_where = f" theme.state='labelling' and  task.uid={_uid}  "
             r, d = self.dbUtil.rg_get_labels(where_task=sql_where)
+            #theme_id,theme_name,description,task.state,theme.state,config_id,theme.uid,task.check_id,check_info.check_number,check_info.patient_id,check_info.measure_date,task.file_id,task.uid
             if r == '0':
                 ret = [r, d]
                 msgtip = [REQmsg[2], "应答:学习评估/提取课堂内容信息", '数据库操作', "不成功", ""]
@@ -3742,7 +3742,7 @@ class server(socketServer):
                         pids += str(d[i][9])
                     else:
                         pids += "," + str(d[i][9])
-                pr, pd = self.dbUtil.get_patientNameByPids(pids)
+                pr, pd = self.dbUtil.get_patientNameByPids(pids)#拿病人名字和id
                 if pr == '0':
                     pd = None
                 ret = [r, REQmsg[1], retData, pd, _curPageIndex, ptotal, rn]
@@ -4807,6 +4807,7 @@ class server(socketServer):
                                             other_where="check_info.state='diagnosing'")
             else:
                 r, d = self.dbUtil.diag_get_forConsulting(uid=REQmsg[3][0])
+                #patientid,measure_date,diag.uid(诊断医生id),diag.state,diag.sign_date(诊断报告落款时间),[一系列报告内容],diag.check_id,check_info.puid,check_info.check_number,check_info.cUid
             if r == '0':
                 ret = [r, d]
                 msgtip = [REQmsg[2], f"应答:{titleinfo[REQmsg[0]]}/提取未诊断信息", '数据库操作', "不成功", ""]
