@@ -393,6 +393,9 @@ class server(socketServer):
             elif cmd == 'reserching' and cmdID == 30:
                 tipmsg, ret = self.rg_paging(clientAddr, REQmsg)
                 REQmsg[3] = ret
+            elif cmd == 'reserching' and cmdID == 31:
+                tipmsg, ret = self.changestate(clientAddr, REQmsg)
+                REQmsg[3] = ret
 
                 # 学习评估/提取诊断信息
             elif cmd == 'testAssess' and cmdID == 1:
@@ -3295,8 +3298,26 @@ class server(socketServer):
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}未定义命令"]
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '未定义命令', '']
         return msgtip, ret
-
-
+    #科研标注/修改状态
+    def changestate(self,clientAddr,REQmsg):
+        check_id = REQmsg[3][0]
+        file_id = REQmsg[3][1]
+        patient_id = REQmsg[3][2]
+        theme_id = REQmsg[3][3]
+        uid = REQmsg[3][4]
+        task_state = REQmsg[3][5]
+        if task_state == 'notStarted':
+            r, d = self.dbUtil.task_update(theme_id, check_id, file_id, uid, 'labelling')
+            if r:
+                ret=['1',REQmsg[3]]
+                msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '修改科研标注状态', '成功']
+            else:
+                ret = ['0',REQmsg[3]]
+                msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '修改科研标注状态', '失败']
+        else:
+            ret=['2',REQmsg[3]]
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '无需修改状态', '']
+        return msgtip, ret
     # 科研标注/查询、分页
     def rg_paging(self, clientAddr, REQmsg):
         if REQmsg[1] == 30:
@@ -3370,29 +3391,6 @@ class server(socketServer):
             else:
                 ret = [r, REQmsg[1], f'{REQmsg[0]}/完成任务标注成功']
                 msgtip = [REQmsg[2], f"应答:{REQmsg[0]}/完成任务标注", f'数据库操作', "成功", ""]
-            # self.diag_mutex.acquire()
-            # r0, d0 = self.dbUtil.task_get(theme_id=theme_id,
-            #                               other_sql="(state ='notStarted' or state= 'labelling')")
-            # if r0 == '0':
-            #     ret = [r0, f'提取当前主题的任务记录不成功:{d0}']
-            #     msgtip = [REQmsg[2], f"应答:{REQmsg[0]}/提取当前主题的任务记录不成功:{d0}", '数据库操作', "不成功",
-            #               ""]
-            # else:
-            #     if len(d0) > 1:
-            #         r, d = self.dbUtil.task_update(theme_id, check_id, file_id, uid, 'labelled')
-            #     else:
-            #         sql1 = f" UPDATE task SET state = 'labelled' WHERE theme_id = {theme_id} and check_id = {check_id} and " \
-            #                f"file_id ={file_id} and uid = {uid}"
-            #         sql2 = f"UPDATE theme SET state = 'evaluating' WHERE theme_id = {theme_id} "
-            #         sqls = [sql1, sql2]
-            #         r, d = self.dbUtil.myExecuteTranSql(sqls)
-            #     if r == '0':
-            #         ret = [r, d]
-            #         msgtip = [REQmsg[2], f"应答:{REQmsg[0]}/完成任务标注", '数据库操作', f"不成功{d}", ""]
-            #     else:
-            #         ret = [r, REQmsg[1], f'{REQmsg[0]}/完成任务标注成功']
-            #         msgtip = [REQmsg[2], f"应答:{REQmsg[0]}/完成任务标注", f'数据库操作', "成功", ""]
-            # self.diag_mutex.release()
         else:
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}未定义命令"]
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '未定义命令', '']
