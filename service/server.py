@@ -1271,13 +1271,14 @@ class server(socketServer):
         file_id = msg[3]
         user_id = msg[4]
         nSample = msg[5]
+        fKey = msg[6]
         label[1] *= nSample
         label[2] *= nSample
         label.extend([check_id, file_id, user_id])
         cmd = 1
         if label[0] == 'all':
             cmd = 2 if label[1] != label[2] else 3
-        if self.dbUtil.insertSample(label, tableName) == '0':
+        if self.dbUtil.insertSample(label, tableName, fKey) == '0':
             msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '插入样本消息失败', "", '']
             ret = ['0', REQmsg[1], 0]
         else:

@@ -3175,9 +3175,12 @@ class dbUtil(MySqlService):
             print(err)
             return [], []
 
-    def insertSample(self, label, tableName):
+    def insertSample(self, label, tableName, fKey):
         try:
-            sql = f'insert into {tableName} (channel, begin, end, type_id, check_id, file_id, uid) values ("{label[0]}", {label[1]}, {label[2]}, {label[3]}, {label[4]}, {label[5]}, {label[6]})'
+            if fKey is None:
+                sql = f'insert into {tableName} (channel, begin, end, type_id, check_id, file_id, uid) values ("{label[0]}", {label[1]}, {label[2]}, {label[3]}, {label[4]}, {label[5]}, {label[6]})'
+            else:
+                sql = f'insert into {tableName} (channel, begin, end, type_id, check_id, file_id, uid, theme_id) values ("{label[0]}", {label[1]}, {label[2]}, {label[3]}, {label[4]}, {label[5]}, {label[6]}, {fKey})'
             tag = self.myExecuteSql(sql)
             if tag == '':
                 return '1'
@@ -3187,12 +3190,14 @@ class dbUtil(MySqlService):
             print(re)
             return '0'
 
-    def updateSample(self, label, tableName, class_id):
+    def updateSample(self, label, tableName, fKey):
         try:
-            if class_id is None:
+            if fKey is None:
                 sql = f'update {tableName} set type_id = {label[3]} where channel = "{label[0]}" and begin = {label[1]} and end = {label[2]} and check_id = {label[4]} and file_id = {label[5]} and uid = {label[6]}'
+            elif tableName == 'result':
+                sql = f'update {tableName} set type_id = {label[3]} where channel = "{label[0]}" and begin = {label[1]} and end = {label[2]} and check_id = {label[4]} and file_id = {label[5]} and uid = {label[6]} and class_id = {fKey}'
             else:
-                sql = f'update {tableName} set type_id = {label[3]} where channel = "{label[0]}" and begin = {label[1]} and end = {label[2]} and check_id = {label[4]} and file_id = {label[5]} and uid = {label[6]} and class_id = {class_id}'
+                sql = f'update {tableName} set type_id = {label[3]} where channel = "{label[0]}" and begin = {label[1]} and end = {label[2]} and check_id = {label[4]} and file_id = {label[5]} and uid = {label[6]} and theme_id = {fKey}'
             tag = self.myExecuteSql(sql)
             if tag == '':
                 return '1'
