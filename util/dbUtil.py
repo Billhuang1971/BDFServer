@@ -1340,7 +1340,21 @@ class dbUtil(MySqlService):
         except Exception as re:
             return '0', str(re)
         return '1', dataSet
+    def diag_get_refused_state(self,tempt):
+        if not tempt:
+            return []
 
+            # 构建 SQL 查询
+        queries = []
+        for check_id, uid in tempt:
+            queries.append(
+                f"SELECT {check_id} AS check_id, {uid} AS uid, EXISTS (SELECT 1 FROM sample_info WHERE check_id = {check_id} AND uid = {uid}) AS `exists`")
+
+        sql = " UNION ALL ".join(queries)
+        results =self.myQuery(sql)
+        # results = data.fetchall()
+        exist_results = [row[2] for row in results]
+        return exist_results
     # 诊断学习/提取学习的诊断信息
     def study_get(self, class_id='', uid=''):
         sql = ''

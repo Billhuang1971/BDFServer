@@ -4801,13 +4801,18 @@ class server(socketServer):
 
     def diags_notDiag_get(self, clientAddr, REQmsg):
         titleinfo = {'manual': '标注诊断', 'manualQuery': '诊断查询', 'consulting': '脑电会诊'}
+        refused_state=[]
         if REQmsg[1] == 24:
             if REQmsg[0] == 'manual':
                 r, d = self.dbUtil.diag_get(check_id='', uid=REQmsg[3][0], diag_state='notDiagnosed',
                                             other_where="check_info.state='diagnosing'")
             else:
                 r, d = self.dbUtil.diag_get_forConsulting(uid=REQmsg[3][0])
+                tempt=[]
                 #patientid,measure_date,diag.uid(诊断医生id),diag.state,diag.sign_date(诊断报告落款时间),[一系列报告内容],diag.check_id,check_info.puid,check_info.check_number,check_info.cUid
+                for i in d:
+                    tempt.append([i[15],i[2]])
+                refused_state=self.dbUtil.diag_get_refused_state(tempt)
             if r == '0':
                 ret = [r, d]
                 msgtip = [REQmsg[2], f"应答:{titleinfo[REQmsg[0]]}/提取未诊断信息", '数据库操作', "不成功", ""]
@@ -4827,7 +4832,7 @@ class server(socketServer):
                     ud = None
                 if pr == '0':
                     pd = None
-                ret = [r, REQmsg[1], d, ud, pd]
+                ret = [r, REQmsg[1], d, ud, pd,refused_state]
                 msgtip = [REQmsg[2], f"应答:{titleinfo[REQmsg[0]]}/提取未诊断信息", '数据库操作', "成功", ""]
         else:
             ret = ['0', REQmsg[1], f"应答{REQmsg[0]}未定义命令"]
