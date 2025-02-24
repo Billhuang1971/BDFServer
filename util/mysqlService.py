@@ -118,10 +118,11 @@ class MySqlService:
             conn = self.getConn()
             cursor = conn.cursor()
             cursor.execute(parmSql, parmValue)
+            results = cursor.fetchall()
             cursor.close()
             conn.commit()
             self.putConn(conn)
-            return ""
+            return results
         except Exception as e:
             print(f"myExecuteSql:{e}")
             self.putConn(conn)
