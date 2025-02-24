@@ -6311,14 +6311,14 @@ class server(socketServer):
                         file_path = os.path.join(path, file_name)
                         if d_block_id + 1 == block_id and block_id == 1:
                             self.makeFileName1(file_path)
-                            self.appUtil.writeByte(file_path, data)
+                            self.appUtil.writeByte(file_path, data, 5*1024*1024, block_id)
                             self.dbUtil.updateAlgorithmInfo(alg_info=['uploading', block_id], alg_id=alg_id, flag=flag)
                             msgtip = [REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功", '', '']
                             ret = ['1', REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功",
                                    ['waiting', alg_id, file_state, block_id + 1]]
                             return msgtip, ret
                         elif d_block_id + 1 == block_id:
-                            self.appUtil.writeByte(file_path, data)
+                            self.appUtil.writeByte(file_path, data, 5*1024*1024, block_id)
                             self.dbUtil.updateAlgorithmInfo(alg_info=['uploading', block_id], alg_id=alg_id, flag=flag)
                             msgtip = [REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功", '', '']
                             ret = ['1', REQmsg[2], f"传输算法文件数据块成功，并更新数据库算法信息成功",

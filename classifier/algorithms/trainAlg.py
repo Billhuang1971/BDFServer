@@ -77,3 +77,7 @@ class trainAlgorithm(AlgorithmTemplate):
         self.train()
         self.result = True
         print("train_performance:{}finish, result:{}finished".format(self.train_performance, self.result))
+
+
+if __name__ == "__main__":
+    alg = trainAlgorithm()
