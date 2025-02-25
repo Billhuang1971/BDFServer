@@ -18,7 +18,7 @@ class testAlgorithm(AlgorithmTemplate):
         pass
 
     def load(self, model):
-        self.model_dict = torch.load(model)
+        self.model_dict = torch.load(model, weights_only=False)
 
     def run(self):
         self.test_set, self.test_label = self.get_dataset(self.testingSetFilename)
