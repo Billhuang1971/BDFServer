@@ -14,6 +14,7 @@ import urllib
 import urllib.request
 import smtplib
 from email.mime.text import MIMEText
+from collections import Counter
 
 class appUtil():
     def __init__(self, dbUtil):
@@ -700,6 +701,17 @@ class appUtil():
                     # print(shotname, extension)
                     return shotname, extension
 
+    def getSetLabelInfo(self, path):
+        print(f'getSetLabelInfo path: {path}')
+        data = np.load(path)  # 把 'your_file_path.npz' 替换成你的文件路径
+        labels = data[data.files[1]]
+        print(labels)
+        label_counts = Counter(labels)
+        print(f'label_counts: {label_counts}')
+        # 根据标签的数值排序（如果是数值标签）
+        sorted_label_counts = {k: v for k, v in sorted(label_counts.items(), key=lambda item: item[0])}
+        print(f'sorted_label_counts: {sorted_label_counts}')
+        return sorted_label_counts
 # if __name__ == '__main__':
 #     a = appUtil()
 #     print(a.root_path)
