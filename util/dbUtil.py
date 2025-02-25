@@ -2717,7 +2717,7 @@ class dbUtil(MySqlService):
         else:
             if fuzzy_search:
                 if where_value!='':
-                    sql = "select classifier_name, alg_name, set_name,train_performance, test_performance from classifier" \
+                    sql = "select classifier_name, alg_name, set_name,epoch_length, classifierUnit,type, channels,train_performance, test_performance from classifier" \
                             " left join algorithm on classifier.alg_id = algorithm.alg_id left join set_info on " \
                             "classifier.set_id = set_info.set_id where {} like '%{}%' and state ='{}'".format(where_name, where_value,state_value)
                 else:
