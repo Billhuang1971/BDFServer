@@ -9,7 +9,7 @@ class waveBuild(setBuildService):
     def __init__(self, dbUtil, appUtil, setName, description, config_id):
         super().__init__(dbUtil, appUtil, setName, description, config_id)
 
-    def serialize(self):
+    def serialize(self): #序列化执行函数和参数，描述处理步骤
         print(f'waveBuild serialize')
         print(self.content)
 
@@ -76,7 +76,7 @@ class waveBuild(setBuildService):
         print(f'totalSample: {totalSample.shape}, totalLabel: {totalLabel.shape}')
 
         id = self.dbUtil.getSetBuildInfo(selColumn='COALESCE(MAX(set_id), 0) + 1', after='set_info')[0][0]
-        print(f'id: {id}')
+        print(f'新增数据集获取的id: {id}')
 
         try:
             if self.trainRatio == 1.0:

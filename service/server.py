@@ -3074,7 +3074,17 @@ class server(socketServer):
     def inqPatientInfo(self, cmdID, key, value, REQmsg):
         try:
             print(f'inqPatientInfo REQmsg: {key}, {value}')
-            patientInfo = self.dbUtil.getPatientInfo(where_name=key, where_like=value)
+            original_pattern = value
+            # 定义转义映射表（根据实际需求调整）
+            escaped_pattern = (
+                original_pattern
+                .replace('%', '\\%')  # 转义百分号
+                .replace("'", '\\\'')  # 转义单引号
+                .replace('_', '\\_')  # 已处理的转义下划线
+                .replace('"', '\\"')
+                .replace('\\', '\\\\')
+            )
+            patientInfo = self.dbUtil.getPatientInfo(where_name=key, where_like=escaped_pattern)
             totalPage = ceil(len(patientInfo) / REQmsg[3][3])
             start = (REQmsg[3][2] - 1) * REQmsg[3][3]
             patientInfo = patientInfo[start:start + REQmsg[3][3]]
@@ -6027,7 +6037,17 @@ class server(socketServer):
         try:
             start = (int(REQmsg[0]) - 1) * int(REQmsg[1])
             print(f'start: {start}')
-            setInfo = self.dbUtil.getSetBuildInfo(after=f"set_info where set_name like '%{REQmsg[3]}%'")
+            original_pattern = REQmsg[3]
+            # 定义转义映射表（根据实际需求调整）
+            escaped_pattern = (
+                original_pattern
+                .replace('%', '\\%')  # 转义百分号
+                .replace("'", '\\\'')  # 转义单引号
+                .replace('_', '\\_')  # 已处理的转义下划线
+                .replace('"','\\"')
+                .replace('\\','\\\\')
+            )
+            setInfo = self.dbUtil.getSetBuildInfo(after=f"set_info where set_name like '%{escaped_pattern}%'")
             msgtip = [cmdID, f"获取集合信息", '', '']
             ret = ['1', cmdID, f"获取集合信息", [len(setInfo), setInfo[start:start + REQmsg[1]]]]
             return msgtip, ret
@@ -7083,7 +7103,18 @@ class server(socketServer):
             key_word = REQmsg[3][0]
             key_value = REQmsg[3][1]
             key_state =REQmsg[3][4]
-            classifier_info = self.dbUtil.get_classifier_alg_set_name(where_name=key_word, where_value=key_value,
+            original_pattern = key_value
+            # 定义转义映射表（根据实际需求调整）
+            escaped_pattern = (
+                original_pattern
+                .replace('%', '\\%')  # 转义百分号
+                .replace("'", '\\\'')  # 转义单引号
+                .replace('_', '\\_')  # 已处理的转义下划线
+                .replace('"', '\\"')
+                .replace('\\', '\\\\')
+            )
+
+            classifier_info = self.dbUtil.get_classifier_alg_set_name(where_name=key_word, where_value=escaped_pattern,
                                                                       state_value=key_state,fuzzy_search=True)
             totalPage = ceil(len(classifier_info) / REQmsg[3][3])
             start = (REQmsg[3][2] - 1) * REQmsg[3][3]
@@ -7444,7 +7475,17 @@ class server(socketServer):
         try:
             ket_value = REQmsg[3][0]
             catagory = REQmsg[3][3]
-            alg_info = self.dbUtil.Inqcls_and_type(where_name='alg_name', where_like=ket_value, where_state='type',
+            original_pattern = ket_value
+            # 定义转义映射表（根据实际需求调整）
+            escaped_pattern = (
+                original_pattern
+                .replace('%', '\\%')  # 转义百分号
+                .replace("'", '\\\'')  # 转义单引号
+                .replace('_', '\\_')  # 已处理的转义下划线
+                .replace('"', '\\"')
+                .replace('\\', '\\\\')
+            )
+            alg_info = self.dbUtil.Inqcls_and_type(where_name='alg_name', where_like=escaped_pattern, where_state='type',
                                                    state=catagory)
             totalPage = ceil(len(alg_info) / REQmsg[3][2])
             start = (REQmsg[3][1] - 1) * REQmsg[3][2]
@@ -7499,7 +7540,17 @@ class server(socketServer):
         try:
             key_value = REQmsg[3][0]
             catagory = REQmsg[3][3]
-            set_info = self.dbUtil.Inquiryset(where_name='set_name', where_like=key_value,
+            original_pattern = key_value
+            # 定义转义映射表（根据实际需求调整）
+            escaped_pattern = (
+                original_pattern
+                .replace('%', '\\%')  # 转义百分号
+                .replace("'", '\\\'')  # 转义单引号
+                .replace('_', '\\_')  # 已处理的转义下划线
+                .replace('"', '\\"')
+                .replace('\\', '\\\\')
+            )
+            set_info = self.dbUtil.Inquiryset(where_name='set_name', where_like=escaped_pattern,
                                                    where_type=catagory)
             totalPage = ceil(len(set_info) / REQmsg[3][2])
             start = (REQmsg[3][1] - 1) * REQmsg[3][2]

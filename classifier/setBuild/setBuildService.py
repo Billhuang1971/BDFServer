@@ -27,7 +27,7 @@ class setBuildService:
         self.trainRatio = 0
         self.scheme = ""
         self.extension = ""
-        self.content = []
+        self.content = [] #所有要打开的文件
 
         # 其他数据
         self.progress = 0
@@ -36,11 +36,11 @@ class setBuildService:
         self.posIndexList = []
         self.eegData = None
         self.eegLength = 0
-        self.posSamples = []
+        self.posSamples = []#正例样本数据
         self.posLabel = []
         self.totalPosNum = 0
         self.curFilePosNum = 0
-        self.negSamples = []
+        self.negSamples = [] #已选的负例样本数据
         self.totalNegNum = 0
         self.curFileNegNum = 0
         self.isDefault = False
@@ -85,7 +85,7 @@ class setBuildService:
         self.extension = data['extension']
 
         # 转换content
-        content_dict = defaultdict(lambda: {
+        content_dict = defaultdict(lambda: { #当访问一个不存在的键时，defaultdict 会调用这个 lambda 函数来生成默认值
             "fileName": "",
             "themeID": self.themeID,
             "channels": self.channels,
@@ -252,12 +252,12 @@ class setBuildService:
         self.eegLength = self.eegData.shape[1]
         print(f'eegData.shape: {self.eegData.shape}')
 
-    def getPos(self):
+    def getPos(self): #获取正例
         print(f'getPos')
         self.curFilePosNum = 0
         for item in self.posIndexList:
             data = self.firstGetData(item[0], item[1], item[2])
-            self.extend(data)
+            self.extend(data) #延拓数据
             self.posLabel.append(item[3])
             self.secondGetData()
 
@@ -265,7 +265,7 @@ class setBuildService:
         # self.posSamples = np.array(self.posSamples)
         # print(f'posSamples: {self.posSamples.shape}')
 
-    def firstGetData(self, begin, end, channel):
+    def firstGetData(self, begin, end, channel): #提取特定时间通道的数据
         # print(f'firstGetData begin: {begin}, end: {end}, channel: {channel}, channels: {self.channels}')
         if channel == 'all':
             selected_data = self.eegData[:, begin:end]
@@ -282,7 +282,7 @@ class setBuildService:
         # print(f'secondGetData')
         pass
 
-    def extend(self, data):
+    def extend(self, data): #延拓
         if self.extension == 'center':
             self.cenExtend(data)
         else:
