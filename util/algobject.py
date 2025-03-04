@@ -287,7 +287,7 @@ class predictAlg(algObject):
                                                      'predict.pkl')
             path = os.path.join(my_path, 'data', 'formated_data')
             check_number = str(self.check_id).zfill(11)
-            file_name = "{:>03}.edf".format(self.file_id)
+            file_name = "{:>03}.bdf".format(self.file_id)
             self.eegFileName = os.path.join(path, check_number, file_name)
             # 不进行存储的下标列表
             self.labels_not_annotation = [0, 33]

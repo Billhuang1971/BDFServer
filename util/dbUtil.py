@@ -3175,6 +3175,8 @@ class dbUtil(MySqlService):
                 sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and class_id = {fKey} order by begin"
             elif table_name == 'reslab':
                 sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and theme_id = {fKey} order by begin"
+            elif table_name == 'label_info':
+                sql = f"select channel, begin, end, mtype_id from {table_name} where check_id={check_id} and file_id={file_id} and mid = {fKey} order by begin"
             else:
                 return []
             samples = self.myQuery(sql)
@@ -3198,6 +3200,8 @@ class dbUtil(MySqlService):
                 sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and class_id = {fKey} order by begin"
             elif table_name == 'reslab':
                 sql = f"select channel, begin, end, type_id from {table_name} where check_id={check_id} and file_id={file_id} and uid = {user_id} and theme_id = {fKey} order by begin"
+            elif table_name == 'label_info':
+                sql = f"select channel, begin, end, mtype_id from {table_name} where check_id={check_id} and file_id={file_id} and mid = {fKey} order by begin"
             else:
                 return [], []
             samples = self.myQuery(sql)

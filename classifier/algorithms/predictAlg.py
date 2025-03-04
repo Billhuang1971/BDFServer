@@ -34,18 +34,18 @@ class predictAlgorithm(AlgorithmTemplate):
         # events_dic_f = open(set_dic_path, 'rb')
         # set = pickle.load(events_dic_f)
         self.set_temp = ast.literal_eval(set_temp)
-        print(self.set_temp)
+        print("---- set_temp", self.set_temp)
         counter = 1
         self.label_mapping = {}
         for i in self.set_temp:
-            self.label_mapping[i] = counter
+            self.label_mapping[counter] = i
             counter += 1
-        print(self.label_mapping)
+        print("---- label_mapping", self.label_mapping)
         if not self.set_temp == set():
             self.import_model = False
         else:
             self.import_model = True
-        print(self.import_model)
+        print("---- import_model", self.import_model)
 
     def load_model(self, modelFile):
         print("load_model function is called")
@@ -89,7 +89,6 @@ class predictAlgorithm(AlgorithmTemplate):
         return raw
 
     # 开始波形标注
-
     def start_wave_predict(self):
         self.raw = self.get_scanset_raw()
         raw_1 = self.raw.to_data_frame()

@@ -6232,6 +6232,16 @@ class server(socketServer):
         try:
             key_word = REQmsg[3][0]
             key_value = REQmsg[3][1]
+            original_pattern = key_value
+            # 定义转义映射表（根据实际需求调整）
+            escaped_pattern = (
+                original_pattern
+                .replace('%', '\\%')  # 转义百分号
+                .replace("'", '\\\'')  # 转义单引号
+                .replace('_', '\\_')  # 已处理的转义下划线
+                .replace('"', '\\"')
+                .replace('\\', '\\\\')
+            )
             if key_word == 'type' and key_value == '波形':
                 key_value = 'waveform'
             if key_word == 'type' and key_value == '状态':
@@ -6242,7 +6252,7 @@ class server(socketServer):
             _Pagerows = REQmsg[3][3]
             if _Pagerows <= 0:
                 _Pagerows = 12
-            result = self.dbUtil.getSearchAlgorithmInfoByPage(where_name=key_word, where_value=key_value,
+            result = self.dbUtil.getSearchAlgorithmInfoByPage(where_name=key_word, where_value=escaped_pattern,
                                                               offset=(_curPageIndex - 1) * _Pagerows, psize=_Pagerows)
             ui_size = self.dbUtil.getAlgorithmInfoLen(where_name=key_word, where_like=key_value)
             ptotal = ceil(ui_size[0][0] / _Pagerows)
