@@ -5950,7 +5950,7 @@ class server(socketServer):
     def buildSet(self, cmdID, REQmsg):
         print(f'buildSet REQmsg: {REQmsg}')
         try:
-            if hasattr(self, 'setBuildService') and self.setBuildService is not None:
+            if hasattr(self, 'setBuildService') and self.setBuildService is not None: #检测当前是否已经初始化或已经拥有self.setBuildService
                 msgtip = [cmdID, f"当前有其他用户正在构建数据集，请稍等", '', '']
                 ret = ['0', cmdID, f"当前有其他用户正在构建数据集，请稍等", ["当前有其他用户正在构建数据集，请稍等"]]
                 return msgtip, ret
@@ -5985,6 +5985,7 @@ class server(socketServer):
 
         except Exception as e:
             print('buildSet', e)
+            self.setBuildService=None
             msgtip = [cmdID, f"构建数据集失败", '', '']
             ret = ['0', cmdID, f"构建数据集失败, e: {e}", ["构建失败"]]
             return msgtip, ret
@@ -6008,6 +6009,7 @@ class server(socketServer):
                 print(f'线程为None')
         except Exception as e:
             print('buildSetGetPg', e)
+            self.setBuildService = None
             msgtip = [cmdID, f"构建数据集失败", '', '']
             ret = ['0', cmdID, f"构建数据集失败, e: {e}"]
             return msgtip, ret
@@ -6027,6 +6029,7 @@ class server(socketServer):
                 print(f'线程为None')
         except Exception as e:
             print('buildSetCancel', e)
+            self.setBuildService = None
             msgtip = [cmdID, f"取消构建数据集失败", '', '']
             ret = ['0', cmdID, f"取消数据集失败, e: {e}", [False, f"取消构建数据集失败"]]
             return msgtip, ret
@@ -7654,7 +7657,6 @@ class server(socketServer):
         if sample_lenth!=algPara['sample_len'] or sample_lenth!=setPara['span']:
             return False
         return True
-
     # 脑电扫描
     def getAutoInitData(self, macAddr, REQmsg):
         try:
