@@ -1611,7 +1611,7 @@ class server(socketServer):
     # 根据传入参数保存导联方案通道
     def saveMontageChannel(self, macAddr, REQmsg):
         try:
-            result = self.appUtil.saveMontageChannel(REQmsg[3][0], REQmsg[3][1])
+            result = self.appUtil.saveMontageChannel(REQmsg[3][0], REQmsg[3][1], REQmsg[3][2])
             if result[0] == '1':
                 msgtip = [REQmsg[1], f"{result[1]}", f'{REQmsg[2]}', '']
                 ret = ['1', REQmsg[1], REQmsg[3]]
@@ -1619,6 +1619,11 @@ class server(socketServer):
             elif result[0] == '0':
                 msgtip = [REQmsg[1], f"{result[1]}", f'{REQmsg[2]}', '']
                 ret = ['0', REQmsg[1], REQmsg[3]]
+                return msgtip, ret
+            elif result[0] == '2':
+                REQmsg[3][1] = REQmsg[3][1][:-1]
+                msgtip = [REQmsg[1], f"{result[1]}", f'{REQmsg[2]}', '']
+                ret = ['2', REQmsg[1], REQmsg[3]]
                 return msgtip, ret
         except Exception as e:
             print('saveMontageChannel', e)

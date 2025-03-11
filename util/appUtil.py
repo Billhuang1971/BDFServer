@@ -374,7 +374,7 @@ class appUtil():
             ret = ['0', '打开导联文件文件无效']
             return ret
 
-    def saveMontageChannel(self, where_name, channels):
+    def saveMontageChannel(self, where_name, channels, flag):
         try:
             with open('data/config.json', "r", encoding='utf8') as fp:
                 data = json.load(fp)
@@ -382,11 +382,16 @@ class appUtil():
             with open('data/config.json', "w", encoding='utf8') as fp:
                 for i in range(len(data['montages'])):
                     if data['montages'][i]['name'] == where_name:
-                        data['montages'][i]['channels'] = channels
+                        currentAdd = channels[-1]
+                        if currentAdd in data['montages'][i]['channels'] and flag != 2:
+                            ret = ['2' , '添加重复导联']
+                        else:
+                            data['montages'][i]['channels'] = channels
+                            ret = ['1', '保存导联方案通道成功']
+                        print(data['montages'][i]['channels'])
                         break
                 json.dump(data, fp, ensure_ascii=False)
                 fp.close()
-                ret = ['1', '保存导联方案通道成功']
                 return ret
         except (IOError, OSError) as err:
             print('saveMontageChannel', err)
