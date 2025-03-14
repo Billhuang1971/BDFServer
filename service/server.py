@@ -7279,7 +7279,7 @@ class server(socketServer):
                 cls_info = REQmsg[3][1]  # start, classifier_id, filename, block_id,本机mac地址
                 classifier_info = self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_info)
                 if classifier_info:  # 存在记录
-                    if self.dbUtil.getclassifierInfo(where_name='state', where_value='ready'):  # 存在且state=ready
+                    if classifier_info[0][5]:  # 存在且state=ready
                         self.dbUtil.update_trans_ClassifierInfo(set_name='state', set_value='notUploaded',
                                                                 where_name='classifier_id', where_value=cls_info)
                         self.dbUtil.update_trans_ClassifierInfo(set_name='block_id', set_value=0,
