@@ -91,7 +91,6 @@ class predictAlgorithm(AlgorithmTemplate):
     # 开始波形标注
     def start_wave_predict(self):
         self.raw = self.get_scanset_raw()
-        raw_1 = self.raw.to_data_frame()
         label_num = 0
         # 事件id随便设置就行
         event_id = 1

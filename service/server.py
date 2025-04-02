@@ -7838,10 +7838,23 @@ class server(socketServer):
                 alg_id = alg_info[0][0]
                 alg_name = alg_info[0][1]
                 alg_state = alg_info[0][14]
+                alg_status = alg_info[0][17]
                 if alg_state != 'uploaded':
                     msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '匹配操作成功', "", '']
                     ret = ['0', f"当前分类器未上传预测文件", classifier_id]
                     return msgtip, ret
+                if alg_status == "state":
+                    scan_channels_info = json.load(self.dbUtil.getClassifierChannelsById(classifier_id))
+                    package = '{:>011}'.format(check_id)
+                    fileNm = '{:>03}.bdf'.format(file_id)
+                    path = os.path.join(self.dbUtil.root_path, 'data', 'formated_data', package, fileNm)
+                    local_raw = mne.io.read_raw_bdf(path)
+                    file_channels = local_raw.info['ch_names']
+                    if set(scan_channels_info).issubset(set(file_channels)) is False:
+                        msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '匹配操作不成功', "", '']
+                        ret = ['0', f"应答{REQmsg[0]}匹配操作不成功", classifier_id]
+                        return msgtip, ret
+
                 self.predict = predictAlg(dbUtil=self.dbUtil, classifier_id=classifier_id, file_id=file_id,
                                           check_id=check_id, scan_file_channel_list=scan_channels_info,
                                           time_stride=time_stride, uid=REQmsg[2], alg_name=alg_name, alg_id=alg_id)

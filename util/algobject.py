@@ -184,17 +184,13 @@ class trainAlg(algObject):
                                                       epoch_length=self.setDescription['span'],
                                                       config_id=self.config_id, classifierUnit='V', channels=None)
                     else:
-                        channels = ""
-                        for i in self.setDescription['channels']:
-                            channels += i
-                            channels += ","
                         self.dbUtil.addClassifierInfo(classifier_name=self.classifierName, alg_id=self.alg_id,
                                                       set_id=self.set_id,
                                                       filename=self.classifierName + ".pth",
                                                       state='uploaded', train_performance=self.train_performance,
                                                       test_performance=None,
                                                       epoch_length=self.setDescription['span'],
-                                                      config_id=self.config_id, classifierUnit='V', channels=channels)
+                                                      config_id=self.config_id, classifierUnit='V', channels=json.dumps(self.setDescription['channels']))
                 else:
                     self.dbUtil.updateClassifierInfo('train_performance', self.train_performance, 'classifier_id', cls_info[0][0])
         except Exception as e:

@@ -2906,7 +2906,14 @@ class dbUtil(MySqlService):
     def getClassifierInfoByPage(self, offset='', psize=''):
         sql = f"select * from classifier limit {offset}, {psize}"
         classifier_info = self.myQuery(sql)
-        return classifier_info
+        ans = []
+        for c in classifier_info:
+            sql = f"select type from algorithm where alg_id = {c[2]}"
+            type = self.myQuery(sql)[0][0]
+            c = list(c)
+            c.append(type)
+            ans.append(c)
+        return ans
 
     def getSearchClassifierInfoByPage(self, where_name, where_value, offset='', psize=''):
         sql = f"select * from classifier where {where_name} like '%{where_value}%' order by classifier_id limit {offset}, {psize}"
@@ -3298,6 +3305,11 @@ class dbUtil(MySqlService):
         sql = f'select channel, begin, end, type_id from result where check_id = {check_id} and file_id = {file_id} and uid = {uid} and class_id = {class_id}'
         samples = self.myQuery(sql)
         return samples
+
+    def getClassifierChannelsById(self, id):
+        sql = f"select channels from classifier where classifier_id = {id}"
+        channels = self.myQuery(sql)[0][0]
+        return channels
 
 if __name__ == '__main__':
     dbUtil = dbUtil()
