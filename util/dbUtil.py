@@ -1761,6 +1761,12 @@ class dbUtil(MySqlService):
 
     def addLesson(self, lesson_info=''):
         try:
+            # 查询是否已存在相同的课堂
+            check_sql = f"SELECT COUNT(*) FROM class WHERE name = '{lesson_info[2]}'"
+            existing_class = self.myQuery(check_sql)  # 查询数据库
+
+            if existing_class[0][0] > 0:  # 如果查询到数据，说明课堂已存在
+                return '2', '课堂已存在'
             sql = f"insert into class(uid,config_id,name,time,start,end,description) values" "('{}','{}','{}','{}','{}','{}','{}')".format(
                 lesson_info[0], lesson_info[1], lesson_info[2], lesson_info[3], lesson_info[4], lesson_info[5],
                 lesson_info[6])
@@ -1878,6 +1884,16 @@ class dbUtil(MySqlService):
             sql = f"select * from content where {where_name}='{where_value}'"
         content_info = self.myQuery(sql)
         print(content_info)
+        return content_info
+
+    def getClassContentTestInfo(self, class_id):
+        sql = f"SELECT check_id, file_id, uid FROM content WHERE class_id = {class_id} AND purpose = 'test'"
+
+        content_info = self.myQuery(sql)  # 执行查询
+        print(content_info)
+
+
+
         return content_info
 
     def getContentPurpose(self, where_name='', where_value=''):

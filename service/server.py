@@ -1224,7 +1224,7 @@ class server(socketServer):
             montageRaw = self.appUtil.getMontage()
             # montage={'导联名’:[对应通道]}
             montage = {}
-            key = 'default'
+            key = 'DEFAULT'
             montage[key] = eeg[1] #添加缺省导联
             for entry in montageRaw[1]:
                 name = entry['name']
@@ -4002,12 +4002,20 @@ class server(socketServer):
 
     def testOver(self, clientAddr, REQmsg):
         class_id = REQmsg[3][0]
-        check_id = REQmsg[3][1]
-        file_id = REQmsg[3][2]
-        Puid = REQmsg[3][3]
-        uid = REQmsg[3][4]
-        samples1 = self.dbUtil.getAllSampleByFile(check_id, file_id, Puid)
-        samples2 = self.dbUtil.getSamplesFromResult(check_id, file_id, uid, class_id)
+        # check_id = REQmsg[3][1]
+        # file_id = REQmsg[3][2]
+        # Puid = REQmsg[3][3]
+        uid = REQmsg[3][1]
+        #fileList:[check_id, file_id, Puid]
+        fileList = self.dbUtil.getClassContentTestInfo(class_id)
+        samples1 = []
+        samples2 = []
+        for info in fileList:
+            check_id = info[0]
+            file_id = info[1]
+            Puid = info[2]
+            samples1 += self.dbUtil.getAllSampleByFile(check_id, file_id, Puid)
+            samples2 += self.dbUtil.getSamplesFromResult(check_id, file_id, uid, class_id)
         grade = 0
         for sample1 in samples1:
             for sample2 in samples2:
@@ -5358,6 +5366,10 @@ class server(socketServer):
             if rn == '0':
                 msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', class_id]
                 ret = ['0', f"应答{REQmsg[0]}数据库操作不成功:{class_id}"]
+                return msgtip, ret
+            if rn == '2':
+                msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', class_id]
+                ret = ['2', f"应答{REQmsg[0]}数据库操作不成功:{class_id}"]
                 return msgtip, ret
             else:
                 msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作成功', ]
