@@ -617,12 +617,21 @@ class appUtil():
                 new_channel_names = [name.replace('-REF', '').replace('EEG ', '') for name in channel_names]
                 raw.rename_channels({old: new for old, new in zip(channel_names, new_channel_names)})
                 print(f'channel_names: {raw.ch_names}')
-
+                avg_channels=[]
+                ch1,ch2 = channel_set[0].split('-')
+                if ch2=='AV':
+                    for channel in channel_set:
+                        ch1, ch2 = channel.split('-')
+                        avg_channels.append(ch1)
                 # 处理需要计算差值的导联
                 for channel in channel_set:
                     ch1, ch2 = channel.split('-')
                     print(f'channel: {channel}, ch1: {ch1}, ch2: {ch2}')
-                    raw = mne.set_bipolar_reference(raw, anode=ch1, cathode=ch2, ch_name=f'{channel}',
+                    if ch2=='AV':
+                        raw.set_eeg_reference(ref_channels=avg_channels, projection=False)
+                        break
+                    else:
+                        raw = mne.set_bipolar_reference(raw, anode=ch1, cathode=ch2, ch_name=f'{channel}',
                                                     drop_refs=False)
 
                 raw.load_data()
@@ -635,7 +644,7 @@ class appUtil():
             return raw
         except Exception as e:
             print('getEEGData', e)
-            return []
+            return 0
 
     def addAlgorithmFile(self, file_name, data):
         try:

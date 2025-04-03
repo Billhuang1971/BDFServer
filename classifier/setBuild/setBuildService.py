@@ -188,6 +188,11 @@ class setBuildService:
         # 替换通道
         if self.isDefault:
             self.channels = self.appUtil.getDefChannels(fileName)
+            data = json.loads(self.description)
+            data['channels']=self.channels
+            modified_json=json.dumps(data)
+            self.description=modified_json
+
         print(f'channels: {self.channels}')
         if self.type == 'state' and (not self.isDefault):
             self.curChannels = self.appUtil.getDefChannels(fileName)
@@ -213,44 +218,50 @@ class setBuildService:
             self.curFileNegNum = int(len(self.posIndexList) / self.ratio)
 
     def getEEGData(self, fileName):
-        print(f'getEEGData fileName: {fileName}')
-        self.eegData = self.appUtil.getEEGData(self.isDefault, fileName, self.channels, self.type)
-
-        if self.type == 'state' and (not self.isDefault):
-            print('根据通道选择数据')
-            tempChannels = [name.replace('-REF', '').replace('EEG ', '') for name in self.curChannels]
-            selected_channels_index = [tempChannels.index(channel) for channel in self.channels]
-            print(f'selected_channels_index: {selected_channels_index}')
-            tempt_raw = self.eegData
-            self.eegData = tempt_raw.get_data()[np.array(selected_channels_index), :]
-            del tempt_raw
-            gc.collect()
-        elif self.type == 'state' and self.isDefault:
-            if self.scheme == 'State Neg Model 1':
-                self.eegData.filter(l_freq=1, h_freq=45, l_trans_bandwidth='auto', h_trans_bandwidth='auto',
-                           filter_length='auto', phase='zero', fir_window='hamming')
-                # 降采样，256果然是太大了
-                print(f"sfreq: {self.eegData.info['sfreq']}")
-                self.eegData = self.eegData.resample(128)
-                # 新版的这个有滤波
+        try:
+            print(f'getEEGData fileName: {fileName}')
+            self.eegData = self.appUtil.getEEGData(self.isDefault, fileName, self.channels, self.type)
+            if self.eegData==0:
+                self.isStop = True
+                self.errorReason = '部分导联不存在于EEG文件中，请重新选择导联.'
+                return
+            if self.type == 'state' and (not self.isDefault):
+                print('根据通道选择数据')
+                tempChannels = [name.replace('-REF', '').replace('EEG ', '') for name in self.curChannels]
+                selected_channels_index = [tempChannels.index(channel) for channel in self.channels]
+                print(f'selected_channels_index: {selected_channels_index}')
                 tempt_raw = self.eegData
-                self.eegData = tempt_raw.get_data()
+                self.eegData = tempt_raw.get_data()[np.array(selected_channels_index), :]
                 del tempt_raw
                 gc.collect()
-                print(f'raw_data: {self.eegData.shape}')
+            elif self.type == 'state' and self.isDefault:
+                if self.scheme == 'State Neg Model 1':
+                    self.eegData.filter(l_freq=1, h_freq=45, l_trans_bandwidth='auto', h_trans_bandwidth='auto',
+                               filter_length='auto', phase='zero', fir_window='hamming')
+                    # 降采样，256果然是太大了
+                    print(f"sfreq: {self.eegData.info['sfreq']}")
+                    self.eegData = self.eegData.resample(128)
+                    # 新版的这个有滤波
+                    tempt_raw = self.eegData
+                    self.eegData = tempt_raw.get_data()
+                    del tempt_raw
+                    gc.collect()
+                    print(f'raw_data: {self.eegData.shape}')
+                else:
+                    tempt_raw = self.eegData
+                    self.eegData = tempt_raw.get_data()
+                    del tempt_raw
+                    gc.collect()
             else:
                 tempt_raw = self.eegData
                 self.eegData = tempt_raw.get_data()
                 del tempt_raw
                 gc.collect()
-        else:
-            tempt_raw = self.eegData
-            self.eegData = tempt_raw.get_data()
-            del tempt_raw
-            gc.collect()
 
-        self.eegLength = self.eegData.shape[1]
-        print(f'eegData.shape: {self.eegData.shape}')
+            self.eegLength = self.eegData.shape[1]
+            print(f'eegData.shape: {self.eegData.shape}')
+        except Exception as e:
+            print('getEEGData', e)
 
     def getPos(self): #获取正例
         print(f'getPos')

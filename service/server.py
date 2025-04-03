@@ -6004,6 +6004,7 @@ class server(socketServer):
                 if self.setBuildService.isStop:
                     ret = ['0', cmdID, f"构建失败，原因为：{self.setBuildService.errorReason}",
                            [self.setBuildService.errorReason]]
+                    self.setBuildService = None
                 else:
                     progress = self.setBuildService.getProgress()
                     ret = ['1', cmdID, f"构建数据集ing", ['building', progress]]

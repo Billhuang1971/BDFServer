@@ -2400,11 +2400,25 @@ class dbUtil(MySqlService):
 
     def addSet(self, setInfo):
         try:
-            sql = f"insert into " \
-                  f"set_info(set_name, config_id, description, filename_trainingset, filename_testset) " \
-                  f"values ('{setInfo[1]}', {setInfo[2]}, '{setInfo[3]}', '{setInfo[4]}', '{setInfo[5]}')"
+            # sql = f"insert into " \
+            #       f"set_info(set_name, config_id, description, filename_trainingset, filename_testset) " \
+            #       f"values ('{setInfo[1]}', {setInfo[2]}, '{setInfo[3]}', '{setInfo[4]}', '{setInfo[5]}')"
+            sql = """
+                    INSERT INTO set_info 
+                    (set_name, config_id, description, filename_trainingset, filename_testset) 
+                    VALUES (%s, %s, %s, %s, %s)
+                    """
+            # 参数按顺序传递（确保与占位符顺序一致）
+            params = (
+                setInfo[1],  # set_name
+                setInfo[2],  # config_id
+                setInfo[3],  # description（自动处理单引号转义）
+                setInfo[4],  # filename_trainingset
+                setInfo[5]  # filename_testset
+            )
             print(f'addSet sql: {sql}')
-            result = self.myExecuteSql(sql)
+            result = self.myExecuteSqlWithParm(sql, params)
+            # result = self.myExecuteSql(sql)
             if result != '':
                 return '0', result
             else:
