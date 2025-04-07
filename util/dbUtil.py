@@ -2433,7 +2433,7 @@ class dbUtil(MySqlService):
                 setInfo[5]  # filename_testset
             )
             print(f'addSet sql: {sql}')
-            result = self.myExecuteSqlWithParm(sql, params)
+            result = self.execute_update(sql, params)
             # result = self.myExecuteSql(sql)
             if result != '':
                 return '0', result

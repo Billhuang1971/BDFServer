@@ -127,6 +127,20 @@ class MySqlService:
             print(f"myExecuteSql:{e}")
             self.putConn(conn)
             return e
+
+    # 专用更新方法（返回受影响行数或其他标识）
+    def execute_update(self, parmSql, parmValue):
+        try:
+            conn = self.getConn()
+            cursor = conn.cursor()
+            cursor.execute(parmSql, parmValue)
+            conn.commit()
+            self.putConn(conn)
+            return cursor.rowcount  # 返回受影响的行数
+        except Exception as e:
+            print(f"execute_update error: {e}")
+            self.putConn(conn)
+            return e
     def myExecuteTranSql(self, parmSql):
         conn = self.getConn()
         try:
