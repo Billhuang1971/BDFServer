@@ -197,8 +197,12 @@ class setBuildService:
         if self.type == 'state' and (not self.isDefault):
             self.curChannels = self.appUtil.getDefChannels(fileName)
             print(f'eegChannels: {self.curChannels}')
-            if not set(self.channels).issubset(
-                    set([name.replace('-REF', '').replace('EEG ', '') for name in self.curChannels])):
+            # if not set(self.channels).issubset(
+            #         set([name.replace('-REF', '').replace('EEG ', '') for name in self.curChannels])):
+            #     self.isStop = True
+            #     self.errorReason = '部分导联不存在于EEG文件中，请重新选择导联.'
+            #     return
+            if not set(self.channels).issubset(set(self.curChannels)):
                 self.isStop = True
                 self.errorReason = '部分导联不存在于EEG文件中，请重新选择导联.'
                 return
@@ -227,7 +231,8 @@ class setBuildService:
                 return
             if self.type == 'state' and (not self.isDefault):
                 print('根据通道选择数据')
-                tempChannels = [name.replace('-REF', '').replace('EEG ', '') for name in self.curChannels]
+                # tempChannels = [name.replace('-REF', '').replace('EEG ', '') for name in self.curChannels]
+                tempChannels = [name.replace('EEG ', '') for name in self.curChannels]
                 selected_channels_index = [tempChannels.index(channel) for channel in self.channels]
                 print(f'selected_channels_index: {selected_channels_index}')
                 tempt_raw = self.eegData
