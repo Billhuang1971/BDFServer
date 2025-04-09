@@ -45,13 +45,14 @@ class setBuildService:
         self.curFileNegNum = 0
         self.isDefault = False
 
+        # error
+        self.errorReason = ''
+        self.isStop = False
+
         # self.simulateThread()
         self.buildThread = runThread(self.optimize, self.build, self.saveData)
         self.buildThread.start()
 
-        # error
-        self.errorReason = ''
-        self.isStop = False
 
     def simulateThread(self):
         print(f'simulateThread')
