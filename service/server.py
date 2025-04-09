@@ -12,6 +12,7 @@ from os import makedirs, path, remove
 import json
 
 import mne
+import pyedflib
 from PyQt5.QtCore import QProcess, QEventLoop, QTimer
 from PyQt5.QtGui import QStandardItem
 from PyQt5.QtGui import QStandardItemModel
@@ -7803,14 +7804,14 @@ class server(socketServer):
             check_id = REQmsg[3][0]
             file_name = REQmsg[3][1]
             selected_file_info = REQmsg[3][2]
-            raw = self.load_file_raw(check_id, file_name)
+            raw, EEG = self.load_file_raw(check_id, file_name)
             channel_info = raw.info['ch_names']
             channel_list = []
             for item in channel_info:
                 item = item.split(' ')
                 channel_list.append(item[-1])
             msgtip = [REQmsg[2], f"获取对应病人的脑电文件通道信息", '', '']
-            ret = ['1', REQmsg[2], channel_list, file_name, check_id, selected_file_info]
+            ret = ['1', REQmsg[2], channel_list, file_name, check_id, selected_file_info, EEG]
             return msgtip, ret
         except Exception as e:
             print('getFileChannels', e)
@@ -7857,10 +7858,10 @@ class server(socketServer):
                     ret = ['0', f"当前分类器未上传预测文件", classifier_id]
                     return msgtip, ret
                 if alg_status == "state":
-                    scan_channels_info = json.load(self.dbUtil.getClassifierChannelsById(classifier_id))
+                    scan_channels_info = json.loads(self.dbUtil.getClassifierChannelsById(classifier_id))
                     package = '{:>011}'.format(check_id)
                     fileNm = '{:>03}.bdf'.format(file_id)
-                    path = os.path.join(self.dbUtil.root_path, 'data', 'formated_data', package, fileNm)
+                    path = os.path.join(self.appUtil.root_path, 'data', 'formated_data', package, fileNm)
                     local_raw = mne.io.read_raw_bdf(path)
                     file_channels = local_raw.info['ch_names']
                     if set(scan_channels_info).issubset(set(file_channels)) is False:
@@ -7905,8 +7906,16 @@ class server(socketServer):
     def load_file_raw(self, check_id, file_name):
         try:
             path = self.get_filepath_by_name(check_id, file_name)
+            with pyedflib.EdfReader(path) as reader:
+                # 内部属性包含 recording 字段
+                recording_field = reader.recording
+                print("Recording Field:", recording_field)
+            # 转换为字符串
+            recording_str = recording_field.decode("ascii")
+            # 提取最后一个部分（按空格分割后取最后一个部分）
+            recording_additional = recording_str.split()[-1]
             raw = mne.io.read_raw_bdf(path)
-            return raw
+            return raw, recording_additional
         except Exception as e:
             return e
 
