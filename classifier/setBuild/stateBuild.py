@@ -100,12 +100,13 @@ class stateBuild(setBuildService):
                 y_test = np.array([])
             else:
                 # 使用train_test_split分割数据集和标签
+                test_size=round(1 - self.trainRatio,6)#消除精度误差
                 X_train, X_test, y_train, y_test = train_test_split(totalSample, totalLabel, train_size=self.trainRatio,
-                                                                    test_size=1 - self.trainRatio, random_state=42)
+                                                                    test_size=test_size, random_state=42)
             print(f'X_train: {X_train.shape}, X_test: {X_test.shape}, y_train: {y_train.shape}, y_test: {y_test.shape}')
         except Exception as e:
             self.errorReason = f'当前样本数量为{len(totalLabel)}，样本数量过少，请筛选后重新构建'
-            print(self.e)
+            print(e)
             self.isStop = True
             return
 

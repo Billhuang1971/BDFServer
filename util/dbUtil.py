@@ -1764,6 +1764,12 @@ class dbUtil(MySqlService):
 
     def addLesson(self, lesson_info=''):
         try:
+            # 查询是否已存在相同的课堂
+            check_sql = f"SELECT COUNT(*) FROM class WHERE name = '{lesson_info[2]}'"
+            existing_class = self.myQuery(check_sql)  # 查询数据库
+
+            if existing_class[0][0] > 0:  # 如果查询到数据，说明课堂已存在
+                return '2', '课堂已存在'
             sql = f"insert into class(uid,config_id,name,time,start,end,description) values" "('{}','{}','{}','{}','{}','{}','{}')".format(
                 lesson_info[0], lesson_info[1], lesson_info[2], lesson_info[3], lesson_info[4], lesson_info[5],
                 lesson_info[6])
@@ -1881,6 +1887,16 @@ class dbUtil(MySqlService):
             sql = f"select * from content where {where_name}='{where_value}'"
         content_info = self.myQuery(sql)
         print(content_info)
+        return content_info
+
+    def getClassContentTestInfo(self, class_id):
+        sql = f"SELECT check_id, file_id, uid FROM content WHERE class_id = {class_id} AND purpose = 'test'"
+
+        content_info = self.myQuery(sql)  # 执行查询
+        print(content_info)
+
+
+
         return content_info
 
     def getContentPurpose(self, where_name='', where_value=''):
@@ -2403,11 +2419,25 @@ class dbUtil(MySqlService):
 
     def addSet(self, setInfo):
         try:
-            sql = f"insert into " \
-                  f"set_info(set_name, config_id, description, filename_trainingset, filename_testset) " \
-                  f"values ('{setInfo[1]}', {setInfo[2]}, '{setInfo[3]}', '{setInfo[4]}', '{setInfo[5]}')"
+            # sql = f"insert into " \
+            #       f"set_info(set_name, config_id, description, filename_trainingset, filename_testset) " \
+            #       f"values ('{setInfo[1]}', {setInfo[2]}, '{setInfo[3]}', '{setInfo[4]}', '{setInfo[5]}')"
+            sql = """
+                    INSERT INTO set_info 
+                    (set_name, config_id, description, filename_trainingset, filename_testset) 
+                    VALUES (%s, %s, %s, %s, %s)
+                    """
+            # 参数按顺序传递（确保与占位符顺序一致）
+            params = (
+                setInfo[1],  # set_name
+                setInfo[2],  # config_id
+                setInfo[3],  # description（自动处理单引号转义）
+                setInfo[4],  # filename_trainingset
+                setInfo[5]  # filename_testset
+            )
             print(f'addSet sql: {sql}')
-            result = self.myExecuteSql(sql)
+            result = self.execute_update(sql, params)
+            # result = self.myExecuteSql(sql)
             if result != '':
                 return '0', result
             else:
@@ -2909,7 +2939,14 @@ class dbUtil(MySqlService):
     def getClassifierInfoByPage(self, offset='', psize=''):
         sql = f"select * from classifier limit {offset}, {psize}"
         classifier_info = self.myQuery(sql)
-        return classifier_info
+        ans = []
+        for c in classifier_info:
+            sql = f"select type from algorithm where alg_id = {c[2]}"
+            type = self.myQuery(sql)[0][0]
+            c = list(c)
+            c.append(type)
+            ans.append(c)
+        return ans
 
     def getSearchClassifierInfoByPage(self, where_name, where_value, offset='', psize=''):
         sql = f"select * from classifier where {where_name} like '%{where_value}%' order by classifier_id limit {offset}, {psize}"
@@ -3301,6 +3338,11 @@ class dbUtil(MySqlService):
         sql = f'select channel, begin, end, type_id from result where check_id = {check_id} and file_id = {file_id} and uid = {uid} and class_id = {class_id}'
         samples = self.myQuery(sql)
         return samples
+
+    def getClassifierChannelsById(self, id):
+        sql = f"select channels from classifier where classifier_id = {id}"
+        channels = self.myQuery(sql)[0][0]
+        return channels
 
 if __name__ == '__main__':
     dbUtil = dbUtil()

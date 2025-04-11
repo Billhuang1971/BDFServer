@@ -12,6 +12,7 @@ from os import makedirs, path, remove
 import json
 
 import mne
+import pyedflib
 from PyQt5.QtCore import QProcess, QEventLoop, QTimer
 from PyQt5.QtGui import QStandardItem
 from PyQt5.QtGui import QStandardItemModel
@@ -1224,7 +1225,7 @@ class server(socketServer):
             montageRaw = self.appUtil.getMontage()
             # montage={'导联名’:[对应通道]}
             montage = {}
-            key = 'default'
+            key = 'DEFAULT'
             montage[key] = eeg[1] #添加缺省导联
             for entry in montageRaw[1]:
                 name = entry['name']
@@ -4002,12 +4003,20 @@ class server(socketServer):
 
     def testOver(self, clientAddr, REQmsg):
         class_id = REQmsg[3][0]
-        check_id = REQmsg[3][1]
-        file_id = REQmsg[3][2]
-        Puid = REQmsg[3][3]
-        uid = REQmsg[3][4]
-        samples1 = self.dbUtil.getAllSampleByFile(check_id, file_id, Puid)
-        samples2 = self.dbUtil.getSamplesFromResult(check_id, file_id, uid, class_id)
+        # check_id = REQmsg[3][1]
+        # file_id = REQmsg[3][2]
+        # Puid = REQmsg[3][3]
+        uid = REQmsg[3][1]
+        #fileList:[check_id, file_id, Puid]
+        fileList = self.dbUtil.getClassContentTestInfo(class_id)
+        samples1 = []
+        samples2 = []
+        for info in fileList:
+            check_id = info[0]
+            file_id = info[1]
+            Puid = info[2]
+            samples1 += self.dbUtil.getAllSampleByFile(check_id, file_id, Puid)
+            samples2 += self.dbUtil.getSamplesFromResult(check_id, file_id, uid, class_id)
         grade = 0
         for sample1 in samples1:
             for sample2 in samples2:
@@ -5359,6 +5368,10 @@ class server(socketServer):
                 msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', class_id]
                 ret = ['0', f"应答{REQmsg[0]}数据库操作不成功:{class_id}"]
                 return msgtip, ret
+            if rn == '2':
+                msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作不成功', class_id]
+                ret = ['2', f"应答{REQmsg[0]}数据库操作不成功:{class_id}"]
+                return msgtip, ret
             else:
                 msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '数据库操作成功', ]
                 ret = ['1', lesson_info, class_id]
@@ -6004,6 +6017,7 @@ class server(socketServer):
                 if self.setBuildService.isStop:
                     ret = ['0', cmdID, f"构建失败，原因为：{self.setBuildService.errorReason}",
                            [self.setBuildService.errorReason]]
+                    self.setBuildService = None
                 else:
                     progress = self.setBuildService.getProgress()
                     ret = ['1', cmdID, f"构建数据集ing", ['building', progress]]
@@ -7279,7 +7293,7 @@ class server(socketServer):
                 cls_info = REQmsg[3][1]  # start, classifier_id, filename, block_id,本机mac地址
                 classifier_info = self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=cls_info)
                 if classifier_info:  # 存在记录
-                    if self.dbUtil.getclassifierInfo(where_name='state', where_value='ready'):  # 存在且state=ready
+                    if classifier_info[0][5]:  # 存在且state=ready
                         self.dbUtil.update_trans_ClassifierInfo(set_name='state', set_value='notUploaded',
                                                                 where_name='classifier_id', where_value=cls_info)
                         self.dbUtil.update_trans_ClassifierInfo(set_name='block_id', set_value=0,
@@ -7790,14 +7804,14 @@ class server(socketServer):
             check_id = REQmsg[3][0]
             file_name = REQmsg[3][1]
             selected_file_info = REQmsg[3][2]
-            raw = self.load_file_raw(check_id, file_name)
+            raw, EEG = self.load_file_raw(check_id, file_name)
             channel_info = raw.info['ch_names']
             channel_list = []
             for item in channel_info:
                 item = item.split(' ')
                 channel_list.append(item[-1])
             msgtip = [REQmsg[2], f"获取对应病人的脑电文件通道信息", '', '']
-            ret = ['1', REQmsg[2], channel_list, file_name, check_id, selected_file_info]
+            ret = ['1', REQmsg[2], channel_list, file_name, check_id, selected_file_info, EEG]
             return msgtip, ret
         except Exception as e:
             print('getFileChannels', e)
@@ -7838,10 +7852,23 @@ class server(socketServer):
                 alg_id = alg_info[0][0]
                 alg_name = alg_info[0][1]
                 alg_state = alg_info[0][14]
+                alg_status = alg_info[0][17]
                 if alg_state != 'uploaded':
                     msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '匹配操作成功', "", '']
                     ret = ['0', f"当前分类器未上传预测文件", classifier_id]
                     return msgtip, ret
+                if alg_status == "state":
+                    scan_channels_info = json.loads(self.dbUtil.getClassifierChannelsById(classifier_id))
+                    package = '{:>011}'.format(check_id)
+                    fileNm = '{:>03}.bdf'.format(file_id)
+                    path = os.path.join(self.appUtil.root_path, 'data', 'formated_data', package, fileNm)
+                    local_raw = mne.io.read_raw_bdf(path)
+                    file_channels = local_raw.info['ch_names']
+                    if set(scan_channels_info).issubset(set(file_channels)) is False:
+                        msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '匹配操作不成功', "", '']
+                        ret = ['0', f"应答{REQmsg[0]}匹配操作不成功", classifier_id]
+                        return msgtip, ret
+
                 self.predict = predictAlg(dbUtil=self.dbUtil, classifier_id=classifier_id, file_id=file_id,
                                           check_id=check_id, scan_file_channel_list=scan_channels_info,
                                           time_stride=time_stride, uid=REQmsg[2], alg_name=alg_name, alg_id=alg_id)
@@ -7879,8 +7906,16 @@ class server(socketServer):
     def load_file_raw(self, check_id, file_name):
         try:
             path = self.get_filepath_by_name(check_id, file_name)
+            with pyedflib.EdfReader(path) as reader:
+                # 内部属性包含 recording 字段
+                recording_field = reader.recording
+                print("Recording Field:", recording_field)
+            # 转换为字符串
+            recording_str = recording_field.decode("ascii")
+            # 提取最后一个部分（按空格分割后取最后一个部分）
+            recording_additional = recording_str.split()[-1]
             raw = mne.io.read_raw_bdf(path)
-            return raw
+            return raw, recording_additional
         except Exception as e:
             return e
 
