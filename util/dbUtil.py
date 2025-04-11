@@ -330,12 +330,14 @@ class dbUtil(MySqlService):
                     print('updatecheckInfo', e)
                     return False
             # 只是更新状态
+            # 这个位置原先会 uid = check_info[2] 导致越界，没有更新cUid的理由，在这里删除
             else:
                 check_id = check_info[0]
                 state = check_info[1]
-                uid = check_info[2]
+                # uid = check_info[2]
                 try:
-                    sql = f"update check_info set state = '{state}', cUid = '{uid}' where check_id = '{check_id}' "
+                    # sql = f"update check_info set state = '{state}', cUid = '{uid}' where check_id = '{check_id}' "
+                    sql = f"update check_info set state = '{state}' where check_id = '{check_id}' "
                     self.myExecuteSql(sql)
                 except Exception as e:
                     print('updatecheckInfo', e)
@@ -418,11 +420,12 @@ class dbUtil(MySqlService):
             file_id = filemsg[2]
             mac = str(filemsg[3])
             config_id = filemsg[4]
+            type = str(filemsg[5])
             state = 'notUploaded'
             block_id = 0
             # TODO：后面需要动态添加配置
             # 这里添加有问题
-            sql = f"INSERT INTO `file_info` VALUES ({check_id}, {file_id}, {config_id}, '{state}', {block_id}, '{mac}')"
+            sql = f"INSERT INTO `file_info` VALUES ({check_id}, {file_id}, '{type}', {config_id}, '{state}', {block_id}, '{mac}')"
             flag = self.myExecuteSql(sql)
             if flag == "":
                 return True

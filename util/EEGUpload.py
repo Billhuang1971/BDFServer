@@ -13,19 +13,19 @@ class EEGUpload(object):
         self.appUtil = appUtil
         self.filename_mutex = threading.Lock()
 
-    def makeFileName(self,REQmsg):
+    def makeFileName(self, REQmsg):
         account = REQmsg[3][0]
         try:
             check_number = REQmsg[3][2]
             self.filename_mutex.acquire()
-            filename , file_id ,check_id = self.appUtil.makeFilePath(check_number)
+            filename, file_id, check_id = self.appUtil.makeFilePath(check_number)
             self.filename_mutex.release()
         except Exception as e:
-            print("makeFileName:",e)
+            print("makeFileName:", e)
         if filename:
-            msgtip = [account,f'脑电文件名生成成功','','']
-            ret = ['1', REQmsg[1], f'脑电文件名生成成功',[filename,file_id,check_id]]
-            return msgtip,ret
+            msgtip = [account, f'脑电文件名生成成功', '', '']
+            ret = ['1', REQmsg[1], f'脑电文件名生成成功', [filename, file_id, check_id]]
+            return msgtip, ret
         else:
             msgtip = [account, f'脑电文件名生成失败', '', '']
             ret = ['0', REQmsg[1], f'脑电文件名生成失败']
@@ -102,7 +102,7 @@ class EEGUpload(object):
         rf, result = self.dbUtil.get_fileInfo('check_id', check_id, 'file_id', file_id)
         # 数据库中存在这条记录
         if result:
-            s_mac = result[0][5]
+            s_mac = result[0][6]
             c_mac = filemsg[3]
             if s_mac == c_mac:
                 # 更新这条记录
@@ -145,9 +145,9 @@ class EEGUpload(object):
         rf, result = self.dbUtil.get_fileInfo('check_id', check_id, 'file_id', file_id)
         # 数据库的d3存在以check_id, file_name为关键字的记录
         if result:
-            s_mac = result[0][5]
+            s_mac = result[0][6]
             c_mac = filemsg[3]
-            sblock_id = result[0][4]
+            sblock_id = result[0][5]
             cblock_id = filemsg[4]
             # mac地址验证通过
             if s_mac == c_mac:
@@ -198,9 +198,9 @@ class EEGUpload(object):
         # 先取出以check_id,file_id为关键字的记录
         rf, result = self.dbUtil.get_fileInfo('check_id', check_id, 'file_id', file_id)
         if result:
-            s_mac = result[0][5]
+            s_mac = result[0][6]
             c_mac = filemsg[3]
-            sblock_id = result[0][4]
+            sblock_id = result[0][5]
             # mac地址验证通过
             if s_mac == c_mac:
                 self.dbUtil.update_fileInfo(filemsg, 'uploaded', sblock_id)
@@ -240,9 +240,9 @@ class EEGUpload(object):
         rf, result = self.dbUtil.get_fileInfo('check_id', check_id, 'file_id', file_id)
         # 数据库中存在这条记录
         if result:
-            s_mac = result[0][5]
+            s_mac = result[0][6]
             c_mac = filemsg[3]
-            sblock_id = result[0][4]
+            sblock_id = result[0][5]
             # mac地址验证通过
             if s_mac == c_mac:
                 cblock_id = sblock_id + 1
