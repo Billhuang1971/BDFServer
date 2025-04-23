@@ -612,32 +612,32 @@ class appUtil():
             # 创建一个正则表达式，匹配这些导联名后可能跟着的后缀
             # pattern = r'\b(' + '|'.join(leads) + r')(?:[-\s][\w]*)?'
             # matches = re.findall(pattern, example_input)
-            if not isDefault and type == 'wave':
-                new_channel_names = [name.replace('-REF', '').replace('EEG ', '') for name in channel_names]
-                raw.rename_channels({old: new for old, new in zip(channel_names, new_channel_names)})
-                print(f'channel_names: {raw.ch_names}')
-                avg_channels=[]
-                ch1,ch2 = channel_set[0].split('-')
-                if ch2=='AV':
-                    state=True
-                    for channel in channel_set:
-                        ch1, ch2 = channel.split('-')
-                        avg_channels.append(ch1)
-                # 处理需要计算差值的导联
-                for channel in channel_set:
-                    ch1, ch2 = channel.split('-')
-                    print(f'channel: {channel}, ch1: {ch1}, ch2: {ch2}')
-                    if state:
-                        raw.set_eeg_reference(ref_channels=avg_channels, projection=False)
-                        break
-                    else:
-                        raw = mne.set_bipolar_reference(raw, anode=ch1, cathode=ch2, ch_name=f'{channel}',
-                                                        drop_refs=False)
-                if state is False:
-                    raw.drop_channels(new_channel_names)
-                raw.load_data()
-
-            print(f'channel_names2: {raw.ch_names}')
+            # if not isDefault and type == 'wave': #方案（已废除）
+            #     new_channel_names = [name.replace('-REF', '').replace('EEG ', '') for name in channel_names]
+            #     raw.rename_channels({old: new for old, new in zip(channel_names, new_channel_names)})
+            #     print(f'channel_names: {raw.ch_names}')
+            #     avg_channels=[]
+            #     ch1,ch2 = channel_set[0].split('-')
+            #     if ch2=='AV':
+            #         state=True
+            #         for channel in channel_set:
+            #             ch1, ch2 = channel.split('-')
+            #             avg_channels.append(ch1)
+            #     # 处理需要计算差值的导联
+            #     for channel in channel_set:
+            #         ch1, ch2 = channel.split('-')
+            #         print(f'channel: {channel}, ch1: {ch1}, ch2: {ch2}')
+            #         if state:
+            #             raw.set_eeg_reference(ref_channels=avg_channels, projection=False)
+            #             break
+            #         else:
+            #             raw = mne.set_bipolar_reference(raw, anode=ch1, cathode=ch2, ch_name=f'{channel}',
+            #                                             drop_refs=False)
+            #     if state is False:
+            #         raw.drop_channels(new_channel_names)
+            #     raw.load_data()
+            #
+            # print(f'channel_names2: {raw.ch_names}')
             # data = raw.get_data()
             # 打印数据形状
             # print("Data shape:", data.shape)

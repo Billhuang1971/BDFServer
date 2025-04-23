@@ -22,6 +22,8 @@ from service.socketServer import socketServer
 # from classifier.setBuild.EEGDeepState import EEGDeepState
 from classifier.setBuild.randomState import randomState
 from classifier.setBuild.randomWave import randomWave
+from classifier.setBuild.ClusterSelectWave import ClusterSelectWave
+from classifier.setBuild.ClusterSelectState import ClusterSelectState
 from util.EEGUpload import EEGUpload
 from util.algobject import trainAlg, testAlg, predictAlg
 
@@ -5985,13 +5987,20 @@ class server(socketServer):
             data = json.loads(REQmsg[1])
 
             if REQmsg[3] == 'wave':
-                self.setBuildService = \
-                    randomWave(self.dbUtil, self.appUtil, REQmsg[0], REQmsg[1], REQmsg[2])
+                if REQmsg[4]['reverse_scheme'] == 'Random Select':
+                    self.setBuildService = \
+                        randomWave(self.dbUtil, self.appUtil, REQmsg[0], REQmsg[1], REQmsg[2])
+                elif REQmsg[4]['reverse_scheme'] == 'Cluster Select':
+                    self.setBuildService = \
+                        ClusterSelectWave(self.dbUtil, self.appUtil, REQmsg[0], REQmsg[1], REQmsg[2])
             else:
                 if data['scheme'] == 'State Neg Model 1':
                     print(f'scheme: State Neg Model 1')
                     # self.setBuildService = \
                     #     EEGDeepState(self.dbUtil, self.appUtil, REQmsg[0], REQmsg[1], REQmsg[2])
+                elif REQmsg[4]['reverse_scheme'] == 'Cluster Select':
+                    self.setBuildService = \
+                        ClusterSelectState(self.dbUtil, self.appUtil, REQmsg[0], REQmsg[1], REQmsg[2])
                 else:
                     print(f'scheme: Random')
                     self.setBuildService = \

@@ -187,7 +187,7 @@ class setBuildService:
         fltList = [(item['labeller'], item['typeID']) for item in fileContent]
 
         # 替换通道
-        if self.isDefault:
+        if self.isDefault: #波形和状态的default分支
             self.channels = self.appUtil.getDefChannels(fileName)
             data = json.loads(self.description)
             data['channels']=self.channels
@@ -213,7 +213,7 @@ class setBuildService:
                                                         self.type, self.themeID)
         # 根据第一个值做一个排序，方便之后二分查早使用
         self.posIndexList = sorted(self.posIndexList, key=lambda x: x[0])
-        print(f'posIndexList.len: {len(self.posIndexList)}')
+        print(f'posIndexList.len: {len(self.posIndexList)}') # start,end,channel,typeID
 
         self.curFilePosNum = len(self.posIndexList)
         # 计算负例的数量
@@ -230,11 +230,11 @@ class setBuildService:
                 self.isStop = True
                 self.errorReason = '部分导联不存在于EEG文件中，请重新选择导联.'
                 return
-            if self.type == 'state' and (not self.isDefault):
+            if self.type == 'state' and (not self.isDefault): #状态的非default分支，直接在此筛选通道
                 print('根据通道选择数据')
                 # tempChannels = [name.replace('-REF', '').replace('EEG ', '') for name in self.curChannels]
                 tempChannels = [name.replace('EEG ', '') for name in self.curChannels]
-                selected_channels_index = [tempChannels.index(channel) for channel in self.channels]
+                selected_channels_index = [tempChannels.index(channel) for channel in self.channels]#筛选的通道下标
                 print(f'selected_channels_index: {selected_channels_index}')
                 tempt_raw = self.eegData
                 self.eegData = tempt_raw.get_data()[np.array(selected_channels_index), :]
@@ -283,11 +283,10 @@ class setBuildService:
         # print(f'posSamples: {self.posSamples.shape}')
 
     def firstGetData(self, begin, end, channel): #提取特定时间通道的数据
-        # print(f'firstGetData begin: {begin}, end: {end}, channel: {channel}, channels: {self.channels}')
-        if channel == 'all':
+        if channel == 'all': #由于前面已经筛选了，这里直接是筛选后的通道
             selected_data = self.eegData[:, begin:end]
         else:
-            if channel in self.channels:
+            if channel in self.channels: #对于波形来说是全选
                 channel_index = self.channels.index(channel)
                 selected_data = self.eegData[channel_index:channel_index + 1, begin:end]
                 print(f'channel_index: {channel_index}, selected_data: {selected_data.shape}')

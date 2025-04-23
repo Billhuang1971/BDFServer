@@ -2021,7 +2021,7 @@ class dbUtil(MySqlService):
                 filter_info.append(i[0])
             return filter_info
 
-    def getFilterItemByTypeInfo2(self, source, type_name, maxSample=1, minSample=0, themeInfo=[]):
+    def getFilterItemByTypeInfo2(self, source, type_name, maxSample=1, minSample=0, themeInfo=[],file_type=''):
         msg = {}
         if '诊断标注' in source:
             if msg.get('user') is not None:
@@ -2034,19 +2034,23 @@ class dbUtil(MySqlService):
                 msg['patientName'] = ""
                 msg['measureDate'] = ""
                 msg['fileName'] = ""
-
+            # 找到属于type_name 的活动 且活动持续时间在  minSample到 maxSample 单位时间内的用户的 uid 和 account 信息
             msg['user'] += f"select distinct a.uid, a.account from user_info as a " \
                            f"left join sample_info as b on a.uid = b.uid " \
                            f"left join type_info as c on b.type_id = c.type_id " \
+                           f"LEFT JOIN file_info AS e ON b.check_id = e.check_id " \
                            f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
-                           f"and c.type_name = '{type_name}'"
-
+                           f"and c.type_name = '{type_name}'" \
+                           f"AND e.type = '{file_type}'"
+            #同样通过内连接（patient_info表和check_info中表的patient_id关联,sample_info和check_info的check_id关联）,找到条件内病人id和名字
             msg['patientName'] += f"select distinct a.patient_id, a.name from patient_info as a " \
                                   f"Join check_info AS ci ON a.patient_id = ci.patient_id " \
                                   f"Join sample_info as b on ci.check_id = b.check_id " \
                                   f"left join type_info as c on b.type_id = c.type_id " \
+                                  f"JOIN file_info AS e ON b.check_id = e.check_id " \
                                   f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
-                                  f"and c.type_name = '{type_name}'"
+                                  f"and c.type_name = '{type_name}' " \
+                                  f"AND e.type = '{file_type}'"
 
             msg[
                 'fileName'] += f"select distinct d.`name`, CONCAT(a.check_number, '-', b.file_id), a.check_id, b.file_id from check_info as a " \
@@ -2054,14 +2058,18 @@ class dbUtil(MySqlService):
                                f"left join patient_info as d on d.patient_id = a.patient_id " \
                                f"left join file_info as e on e.check_id = a.check_id " \
                                f"left join type_info as c on b.type_id = c.type_id " \
+                               f"LEFT JOIN file_info AS f ON b.check_id = e.check_id " \
                                f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
-                               f"and c.type_name = '{type_name}'"
+                               f"and c.type_name = '{type_name}' " \
+                               f"AND e.type = '{file_type}'"
 
             msg['measureDate'] += f"select distinct a.measure_date from check_info as a " \
                                   f"JOIN sample_info as b on b.check_id = a.check_id " \
                                   f"left join type_info as c on b.type_id = c.type_id " \
+                                  f"LEFT JOIN file_info AS e ON b.check_id = e.check_id " \
                                   f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
-                                  f"and c.type_name = '{type_name}'"
+                                  f"and c.type_name = '{type_name}' " \
+                                  f"AND e.type = '{file_type}'"
 
         if '科研标注' in source:
             theme_str = ', '.join(f"{theme}" for theme in themeInfo)
@@ -2076,22 +2084,24 @@ class dbUtil(MySqlService):
                 msg['patientName'] = ""
                 msg['measureDate'] = ""
                 msg['fileName'] = ""
-
             msg['user'] += f"select distinct a.uid, a.account from user_info as a " \
                            f"left join reslab as b on a.uid = b.uid " \
                            f"left join type_info as c on b.type_id = c.type_id " \
+                           f"LEFT JOIN file_info AS e ON b.check_id = e.check_id " \
                            f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                            f"and c.type_name = '{type_name}'" \
-                           f"AND b.theme_id IN ({theme_str})"
-
+                           f"AND b.theme_id IN ({theme_str}) " \
+                           f"AND e.type = '{file_type}'"
             msg['patientName'] += f"select distinct a.patient_id, a.name from patient_info as a " \
                                   f"Join check_info AS ci ON a.patient_id = ci.patient_id " \
                                   f"left join task as t on t.check_id = ci.check_id " \
                                   f"Join reslab as b on t.theme_id = b.theme_id " \
                                   f"left join type_info as c on b.type_id = c.type_id " \
+                                  f"LEFT JOIN file_info AS e ON b.check_id = e.check_id " \
                                   f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                                   f"and c.type_name = '{type_name}'" \
-                                  f"AND b.theme_id IN ({theme_str})"
+                                  f"AND b.theme_id IN ({theme_str}) " \
+                                  f"AND e.type = '{file_type}'"
 
             msg[
                 'fileName'] += f"select distinct d.`name`, CONCAT(a.check_number, '-', t.file_id), a.check_id, t.file_id from check_info as a " \
@@ -2100,17 +2110,21 @@ class dbUtil(MySqlService):
                                f"left join patient_info as d on d.patient_id = a.patient_id " \
                                f"left join file_info as e on e.check_id = a.check_id " \
                                f"left join type_info as c on b.type_id = c.type_id " \
+                               f"LEFT JOIN file_info AS f ON b.check_id = e.check_id " \
                                f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                                f"and c.type_name = '{type_name}'" \
-                               f"AND b.theme_id IN ({theme_str})"
+                               f"AND b.theme_id IN ({theme_str}) " \
+                               f"AND f.type = '{file_type}'"
 
             msg['measureDate'] += f"select distinct a.measure_date from check_info as a " \
                                   f"left join task as t on t.check_id = a.check_id " \
                                   f"JOIN reslab as b on b.theme_id = t.theme_id  " \
                                   f"left join type_info as c on b.type_id = c.type_id " \
+                                  f"LEFT JOIN file_info AS e ON b.check_id = e.check_id " \
                                   f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
                                   f"and c.type_name = '{type_name}'" \
-                                  f"AND b.theme_id IN ({theme_str})"
+                                  f"AND b.theme_id IN ({theme_str}) " \
+                                  f"AND e.type = '{file_type}'"
 
         if '自动标注' in source:
             if msg.get('user') is not None:
