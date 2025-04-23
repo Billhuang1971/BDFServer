@@ -2964,7 +2964,15 @@ class dbUtil(MySqlService):
 
     def getSearchClassifierInfoByPage(self, where_name, where_value, offset='', psize=''):
         sql = f"select * from classifier where {where_name} like '%{where_value}%' order by classifier_id limit {offset}, {psize}"
-        set_info = self.myQuery(sql)
+        classifier_info = self.myQuery(sql)
+        ans = []
+        for c in classifier_info:
+            sql = f"select type from algorithm where alg_id = {c[2]}"
+            type = self.myQuery(sql)[0][0]
+            c = list(c)
+            c.append(type)
+            ans.append(c)
+        return ans
         return set_info
 
 
