@@ -1,4 +1,4 @@
-from classifier.setBuild.waveBuild import waveBuild
+from classifier.setBuild.stateBuild import stateBuild
 from bisect import insort
 import random
 import numpy as np
@@ -6,7 +6,7 @@ from scipy.signal import hilbert
 from scipy.stats import pearsonr
 # from pyentrp import sample_entropy as sampen 安装pip install pyentrp
 
-class ClusterSelectState(waveBuild):
+class ClusterSelectState(stateBuild):
     def __init__(self, dbUtil, appUtil, setName, description, config_id):
         super().__init__(dbUtil, appUtil, setName, description, config_id)
     #description {type,sampleRate,span（样本长度）,nChannel（通道数量）,channels（参考方案）,source,theme_id（主题）,minSpan（最小长度）,ratio（正反比例）, trainRatio（训练集占比）,scheme（负例方案）,extension(延拓方式),content}
