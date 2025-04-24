@@ -100,17 +100,17 @@ class ClusterSelectWave(waveBuild):
 
         self.totalNegNum = len(self.negSamples) #最终负例数量
         if self.totalNegNum!=self.negative_num:
-            print('该脑电文件不足以生成该比例的负例或正负比例设置过大')
+            self.isStop = True
+            self.errorReason = '该脑电文件不足以生成该比例的负例或正负比例设置过大.'
 
 
     def _generate_negative_samples(self, D,time_range,current_anno,i): #i为当前quote下标
         """生成N个负例样本(步骤3的具体实现)"""
         n = 1 #负例数量
-        max_attempts = 1000  # 防止无限循环
+        max_attempts = 10000  # 防止无限循环
 
         while n <= self.negative_regions[i]['quota'] and max_attempts > 0:
             max_attempts -= 1
-
 
             # 随机选择开始时间(确保样本完全在时间范围内)
             max_start = time_range[1] - self.span
@@ -142,22 +142,30 @@ class ClusterSelectWave(waveBuild):
                 self.negSamples.append(sample)
                 D = min_dist  # 更新距离标准
                 n += 1
-        if max_attempts <= 0:
-            residual=self.negative_regions[i]['quota']-n
-            if residual > 0:
-                valid_regions = sorted(
-                    [r for r in self.negative_regions if r['quota'] < r['weight']],
-                    key=lambda x: -x['weight']
-                )
 
+        if max_attempts <= 0:
+            remaining=self.negative_regions[i]['quota']-n+1
+            self.negative_regions[i]['residual']=0 #更新当前区间剩余可分配为0（超过迭代次数仍未分配完说明无法找到了）
+            self.negative_regions[i]['quota'] = n #更新当前区间实际分配为n（迭代分配出去的负例）
+            if remaining > 0:
                 # 轮询分配剩余配额
-                while residual > 0 and valid_regions:
+                while remaining > 0:
+                    # 按residual降序排序可分配区域
+                    valid_regions = sorted(
+                        [r for r in self.negative_regions[i+1:] if r['residual'] > 0], #仅对该区间之后的区间分配配额（可改为全局的，但要多次扫描）
+                        key=lambda x: -x['residual']
+                    )
+                    if len(valid_regions) == 0:
+                        self.isStop = True
+                        self.errorReason = f'仍有{remaining}个负例未分配，但已无可分配区间.'
+                        return
                     for region in valid_regions:
-                        if residual <= 0:
+                        if remaining <= 0:
                             break
-                        if region['quota'] < region['weight']:
+                        if region['residual'] > 0:
                             region['quota'] += 1
-                            residual -= 1
+                            region['residual']-=1
+                            remaining -= 1
             print(f"在{time_range[0]}和{time_range[1]}之间迭代超时，负例挑选后移")
         return D
 
@@ -196,9 +204,10 @@ class ClusterSelectWave(waveBuild):
         # 定义区间结构初始化函数
         def add_region(start, end, has_quota):
             region = {
-                'range': (start, end),
-                'weight': 0,
-                'quota': 1 if has_quota else 0
+                'range': (start, end), #负例区间范围
+                'weight': 0, #理论可分配（权重）
+                'quota': 1 if has_quota else 0, #实际分配
+                'residual':0 #剩余可分配
             }
             self.negative_regions.append(region)
 
@@ -221,14 +230,15 @@ class ClusterSelectWave(waveBuild):
         for region in self.negative_regions:
             if region['quota'] == 1:
                 region_length = region['range'][1] - region['range'][0]
-                region['weight'] = int((region_length // self.span) * 0.75)
+                region['weight'] =max(1,int((region_length // self.span) * 0.75)) #这里权重已经按照一定百分比选取了
 
         self.total_negative_capacity = sum(r['weight'] for r in self.negative_regions)
 
         # 校验容量
         if self.negative_num > self.total_negative_capacity:
-            print("负例池不足，正负比例过大")
-            return
+            self.isStop = True
+            self.errorReason = '负例池不足或正负比例过大.'
+
 
         # 第一轮按权重比例分配
         allocated = 0
@@ -236,24 +246,28 @@ class ClusterSelectWave(waveBuild):
             if region['quota'] == 1:
                 theoretical = (region['weight'] / self.total_negative_capacity) * self.negative_num
                 region['quota'] = min(int(theoretical), region['weight'])
+                region['residual']=region['weight']-region['quota']
                 allocated += region['quota']
 
         # 第二轮分配剩余配额
         remaining = self.negative_num - allocated
         if remaining > 0:
-            # 按权重降序排序可分配区域
-            valid_regions = sorted(
-                [r for r in self.negative_regions if r['quota'] < r['weight']],
-                key=lambda x: -x['weight']
-            )
-
             # 轮询分配剩余配额
-            while remaining > 0 and valid_regions:
+            while remaining > 0 :
+                # 按residual降序排序可分配区域
+                valid_regions = sorted(
+                    [r for r in self.negative_regions if r['residual'] > 0],
+                    key=lambda x: -x['residual']
+                )
+                if len(valid_regions) == 0:
+                    print(f"仍有{remaining}未分配，但已无可分配区间")
+                    return 0
                 for region in valid_regions:
                     if remaining <= 0:
                         break
-                    if region['quota'] < region['weight']:
+                    if region['residual'] > 0:
                         region['quota'] += 1
+                        region['residual']-=1
                         remaining -= 1
 
         """预处理所有可用负例区间"""
