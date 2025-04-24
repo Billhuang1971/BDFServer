@@ -23,7 +23,7 @@ class waveBuild(setBuildService):
         })
 
         index = 0
-        for file in data['content']:
+        for file in data['content']: #每个文件分开取
             sequence[str(index)]['funcName'] = 'getPosIndexList'
             sequence[str(index)]['parameters'] = [file['fileName'], file['check_id'], file['file_id'],
                                                   file['fileContent']]
