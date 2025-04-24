@@ -333,6 +333,7 @@ class dbUtil(MySqlService):
             # 这个位置原先会 uid = check_info[2] 导致越界，没有更新cUid的理由，在这里删除
             else:
                 check_id = check_info[0]
+                # state = check_info[1]
                 state = check_info[1]
                 # uid = check_info[2]
                 try:
@@ -357,9 +358,10 @@ class dbUtil(MySqlService):
             return '0', None
         return '1', file_info
 
+    # 04/17 相同的sql查询语句，第二次查询file_info没查到：'select * from file_info where check_id = 118 and file_id = 2'
+    # 04/18 sqlservice里一个事务没commit
     # 获取脑电上传时候脑电数据文件相关信息
     def get_fileInfo(self, where_name='', where_value='', wherename='', wherevalue=''):
-
         if where_name == '':
             sql = "select check_id, file_id, state from file_info "
         elif where_name and wherename:

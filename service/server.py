@@ -162,11 +162,6 @@ class server(socketServer):
             elif cmd == 'dataImport' and cmdID == 4:
                 tipmsg, ret = self.checkConfig(REQmsg)
                 REQmsg[3] = ret
-            # 生成文件名请求
-            elif cmd == 'dataImport' and cmdID == 10:
-                print("这里生成文件名的REQmsg是：", REQmsg)
-                tipmsg, ret = self.makeFileName(REQmsg)
-                REQmsg[3] = ret
             # 写脑电请求
             elif cmd == 'dataImport' and cmdID == 5:
                 print("这里的REQmsg是：", REQmsg)
@@ -180,10 +175,6 @@ class server(socketServer):
             elif cmd == 'dataImport' and cmdID == 7:
                 tipmsg, ret = self.getFileInfo(REQmsg)
                 REQmsg[3] = ret
-            # 删除脑电检查文件
-            elif cmd == 'dataImport' and cmdID == 11:
-                tipmsg, ret = self.delFileInfo(REQmsg)
-                REQmsg[3] = ret
             # 获取病人详细信息
             elif cmd == 'dataImport' and cmdID == 8:
                 tipmsg, ret = self.getChoosePatientInfo(REQmsg)
@@ -192,6 +183,20 @@ class server(socketServer):
             elif cmd == 'dataImport' and cmdID == 9:
                 tipmsg, ret = self.getChooseDoctorInfo(REQmsg)
                 REQmsg[3] = ret
+            # 生成文件名请求
+            elif cmd == 'dataImport' and cmdID == 10:
+                print("这里生成文件名的REQmsg是：", REQmsg)
+                tipmsg, ret = self.makeFileName(REQmsg)
+                REQmsg[3] = ret
+            # 删除脑电检查文件
+            elif cmd == 'dataImport' and cmdID == 11:
+                tipmsg, ret = self.delFileInfo(REQmsg)
+                REQmsg[3] = ret
+            # 获取当前用户配置信息
+            elif cmd == 'dataImport' and cmdID == 12:
+                tipmsg, ret = self.getUserConfig(REQmsg)
+                REQmsg[3] = ret
+
 
             # 任务设置模块
             # 获取标注主题信息
@@ -238,11 +243,6 @@ class server(socketServer):
             elif cmd == 'taskSettings' and cmdID == 11:
                 tipmsg, ret = self.getChooseMarkerInfo(REQmsg)
                 REQmsg[3] = ret
-
-
-
-
-
 
 
             # 获取基本配置数据
@@ -1815,72 +1815,21 @@ class server(socketServer):
             ret = ['0', REQmsg[1], f"添加脑电检查信息失败：{e}", None]
             return msgtip, ret
 
-    # 检查用户基本配置
-    # TODO:思考这里需要添加更新check_info操作吗
-    def checkMakeFileNameXXX(self, REQmsg):
+    def getUserConfig(self, REQmsg):
         try:
             account = REQmsg[3][0]
-            user_id = REQmsg[3][1]
-            filemsg = REQmsg[3][2]
-            freq = int(REQmsg[3][3])
             # 获取用户基本配置信息
-            congfig_id = filemsg[4]
-            ru, user_config = self.dbUtil.query_configData('config_id', congfig_id)
+            config_id = REQmsg[3][2]
+            ru, user_config = self.dbUtil.query_configData('config_id', config_id)
             if ru == '1':
-                # 截取最需要的部分
-                # [sampling_rate, notch, low_pass, high_pass]
-                # user_config = (250, 50, 100, 0.5)
                 if user_config:
                     user_config = user_config[0]
                     user_config = user_config[2:-1]
-
-                    sampling_rate = int(user_config[0])
-                    # 判断用户当前配置是否适合处理该脑电文件
-                    if (freq >= sampling_rate):
-                        try:
-                            # 制作文件名
-                            check_id = filemsg[1]
-                            # 这里增加一个锁，保证服务端同时只为一个用户生成文件名，并添加数据库记录
-                            self.filename_mutex.acquire()
-                            filename, file_id = self.appUtil.makeFilePath(check_id)
-                            filemsg[2] = file_id
-                            self.dbUtil.add_fileInfo(filemsg)
-                            self.filename_mutex.release()
-                        except Exception as e:
-                            print('checkMakeFileName_makeFilename', e)
-                            return
-                        if filename:
-                            msgtip = [account, f"检查脑电文件配置成功，生成文件名成功", '', '']
-                            ret = ['1', REQmsg[1], f"检查脑电文件配置成功，生成文件名成功", [user_config, filename]]
-                            return msgtip, ret
-                        else:
-                            msgtip = [account, f"检查脑电文件配置成功，生成文件名失败", '', '']
-                            ret = ['0', REQmsg[1], f"检查脑电文件配置成功，生成文件名失败", [user_config]]
-                            return msgtip, ret
-                    # 较低采样率不进行转化
-                    else:
-                        msgtip = [account, f"当前脑电文件采样率为:{freq}和用户基本配置采样率:{sampling_rate}不符!!!!",
-                                  '', '']
-                        ret = ['2', REQmsg[1],
-                               f"当前脑电文件采样率为:{freq}和用户基本配置采样率:{sampling_rate}不符!!!!\n请重新去配置选择模块选合适的功能！！",
-                               [user_config]]
-                        return msgtip, ret
-                else:
-                    msgtip = [account, f"未在数据库找到当前配置信息！！", '', '']
-                    ret = ['0', REQmsg[1], f"未在数据库找到当前配置信息！！", [None]]
+                    msgtip = [account, f"获取脑电文件配置成功", '', '']
+                    ret = ['1', REQmsg[1], f"获取脑电文件配置成功", [user_config]]
                     return msgtip, ret
-
-
-            else:
-                msgtip = [account, f"获取配置失败", '', '']
-                ret = ['0', REQmsg[1], f"获取配置失败", [None]]
-                return msgtip, ret
         except Exception as e:
-            print('checkMakeFileName', e)
-            account = REQmsg[3][0]
-            msgtip = [account, f"脑电上传失败:{e}", '', '']
-            ret = ['0', REQmsg[1], f"脑电上传失败:{e}", [None]]
-            return msgtip, ret
+            print('getUserConfig', e)
 
     def checkConfig(self, REQmsg):
         try:
@@ -1889,8 +1838,8 @@ class server(socketServer):
             filemsg = REQmsg[3][2]
             freq = REQmsg[3][3]
             # 获取用户基本配置信息
-            congfig_id = filemsg[4]
-            ru, user_config = self.dbUtil.query_configData('config_id', congfig_id)
+            config_id = filemsg[4]
+            ru, user_config = self.dbUtil.query_configData('config_id', config_id)
             if ru == '1':
                 # 截取最需要的部分
                 # [sampling_rate, notch, low_pass, high_pass]
@@ -1903,7 +1852,7 @@ class server(socketServer):
                     # 判断用户当前配置是否适合处理该脑电文件
                     if (freq > sampling_rate):
                         msgtip = [account, f"检查脑电文件配置成功", '', '']
-                        ret = ['1', REQmsg[1], f"检查脑电文件配置成功", [user_config],filemsg]
+                        ret = ['1', REQmsg[1], f"检查脑电文件配置成功", [user_config], filemsg]
                         return msgtip, ret
                     # 较低采样率不进行转化
                     else:
