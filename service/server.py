@@ -26,7 +26,7 @@ from classifier.setBuild.ClusterSelectWave import ClusterSelectWave
 from classifier.setBuild.ClusterSelectState import ClusterSelectState
 from util.EEGUpload import EEGUpload
 from util.algobject import trainAlg, testAlg, predictAlg
-
+from collections import defaultdict
 
 class server(socketServer):
     def __init__(self, s_ip, s_port, dbUtilH, appUtilH, curUserH):
@@ -957,6 +957,9 @@ class server(socketServer):
                 REQmsg[3] = ret
             elif cmd == 'setBuild' and cmdID == 11:
                 tipmsg, ret = self.getSetDescribe(cmdID, REQmsg[3])
+                REQmsg[3] = ret
+            elif cmd == 'setBuild' and cmdID == 12:
+                tipmsg, ret = self.channel_match(cmdID, REQmsg[3])
                 REQmsg[3] = ret
 
 
@@ -5798,7 +5801,16 @@ class server(socketServer):
         print(f'getSetBuildFltData REQmsg: {REQmsg}')
         try:
             theme_ids = [item[0] for item in REQmsg[4]]
-            result = self.dbUtil.getFilterItemByTypeInfo2(REQmsg[0], REQmsg[1], REQmsg[2], REQmsg[3], theme_ids)
+            file_type=REQmsg[5]
+            result = self.dbUtil.getFilterItemByTypeInfo2(REQmsg[0], REQmsg[1], REQmsg[2], REQmsg[3], theme_ids,file_type)
+            # if result!=[]:
+            #     file=result['fileName']
+            #     for patient_name, files in file.items():
+            #         for file_info in files:
+            #             file_name, (check_id, file_id) = file_info
+            #             file_path=f"data/formated_data/{str(check_id).zfill(11)}/{str(file_id).zfill(3)}.bdf"
+
+
             if len(result) == 0:
                 msgtip = [cmdID, f"构建集合获取选择的样本详细信息失败", '', '']
                 ret = ['0', cmdID, f"构建集合获取选择的样本详细信息失败", '数据库没有所选择类型的数据']
@@ -5972,6 +5984,42 @@ class server(socketServer):
             msgtip = [cmdID, f"构建数据集失败", '', '']
             ret = ['0', cmdID, f"构建数据集失败, e: {e}", ["构建失败"]]
             return msgtip, ret
+    def channel_match(self,cmdID, REQmsg):
+        try:
+            file_content=REQmsg
+            channels=[]
+            content_dict = defaultdict(lambda: {
+                "fileName": "",
+                "check_id": "",
+                "file_id": "",
+                "fileContent": [],
+                "file_name":""
+            })
+            for operation in file_content:
+                typeID, labeller, patient_id, file_ids,file_name = operation
+                check_id, file_id = file_ids
+                key = (check_id, file_id)
+                file_path = f"data/formated_data/{str(check_id).zfill(11)}/{str(file_id).zfill(3)}.bdf"
+                content_dict[key]["fileName"] = file_path
+                content_dict[key]["check_id"] = check_id
+                content_dict[key]["file_id"] = file_id
+                content_dict[key]["fileContent"].append({
+                    "labeller": str(labeller),
+                    "typeID": str(typeID)
+                })
+                content_dict[key]["file_name"]=file_name
+            for file in content_dict:  # 每个文件分开取
+                result= self.appUtil.getDefChannels(file['fileName'])
+                channels.append([result,file['file_name']])
+            msgtip = [cmdID, f"获取数据集构造所需的通道信息", '', '']
+            ret = ['1', cmdID, f"获取数据集构造所需的通道信息", channels]
+            return msgtip, ret
+        except Exception as e:
+            print('channel_match', e)
+            msgtip = [cmdID, f"获取数据集构造所需的通道信息失败", '', '']
+            ret = ['0', cmdID, f"获取数据集构造所需的通道信息失败, e: {e}"]
+            return msgtip, ret
+
 
     # 获取构建集合的进度
     def buildSetGetPg(self, cmdID, REQmsg):

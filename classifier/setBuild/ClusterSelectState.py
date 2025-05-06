@@ -20,7 +20,7 @@ class ClusterSelectState(stateBuild):
         self.negative_num = self.positive_num * self.N  # 总负例数量
         self.quota = []  # 负例配额
         if self.isStop:
-            print(f'Wave 搜索负例中止')
+            print(f'state 搜索负例中止')
             return
 
         """生成数据集"""
@@ -45,6 +45,9 @@ class ClusterSelectState(stateBuild):
             D = self._generate_negative_samples(D, time_range, first_anno, 0)
 
         for i in range(1, len(self.negative_regions) - 1):  # 处理中间的负例挑选
+            if self.isStop:
+                print(f'state 搜索负例中止')
+                return
             if self.negative_regions[i]['quota'] == 0:  # 跳过这个区间，并更新样本中心
                 curr_anno = self.posIndexList[i]
                 # 提取当前正例样本
@@ -60,6 +63,9 @@ class ClusterSelectState(stateBuild):
                 class_samples = self.positive_samples[label]
                 self.class_centers[label] = self.compute_center(class_samples)
             else:  # 该区间有额度，可构建负例
+                if self.isStop:
+                    print(f'state 搜索负例中止')
+                    return
                 prev_anno = self.posIndexList[i - 1]
                 curr_anno = self.posIndexList[i]
 
@@ -85,6 +91,9 @@ class ClusterSelectState(stateBuild):
                 D = self._generate_negative_samples(D, time_range, curr_anno, i)
         # 最后一个区间的负例挑选
         if self.negative_regions[-1]['quota'] != 0:
+            if self.isStop:
+                print(f'state 搜索负例中止')
+                return
             prev_anno = self.posIndexList[-1]
             last_time = len(self.eegData[0])
 
@@ -117,7 +126,8 @@ class ClusterSelectState(stateBuild):
             # 随机选取一个点作为负例样本起始
             current_sample = random.randint(time_range[0], time_range[1])  # 脑电时间长度-样本长度，即取样本起始点
             sample_end = current_sample + self.span  # 样本结束点
-
+            if sample_end >time_range[1]: #不可超过正例起始点
+                    continue
             # 随机通道
             # channel_index = random.randint(0, len(self.channels) - 1)
             # 正例同通道
