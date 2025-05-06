@@ -896,6 +896,13 @@ class server(socketServer):
             elif cmd == 'algorithm' and cmdID == 7:
                 tipmsg, ret = self.algorithmInfoPaging(macAddr, REQmsg)
                 REQmsg[3] = ret
+            elif cmd == 'algorithm' and cmdID == 8:
+                tipmsg, ret = self.algorithmTemplate(macAddr, REQmsg)
+                REQmsg[3] = ret
+            elif cmd == 'algorithm' and cmdID == 9:
+                tipmsg, ret = self.downloadTemple(macAddr, REQmsg)
+                REQmsg[3] = ret
+
 
 
 
@@ -6104,7 +6111,41 @@ class server(socketServer):
             ret = ['0', cmdID, f"获取集合信息失败, e: {e}", ['获取搜索数据集失败']]
             return msgtip, ret
 
-        # 算法管理
+        # 算法管理\
+
+    def downloadTemple(self, macAddr, REQmsg):
+        try:
+            block = REQmsg[3][0]
+            path = self.appUtil.root_path + "/classifier/algorithms/algorithms.zip"
+            block_size = 1024 * 1024
+            file_size = os.path.getsize(path)
+            data = self.appUtil.readByte(path, block_size, block // block_size + 1)
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '读取文件成功', "", '']
+            ret = ['1', REQmsg[1], block + block_size, file_size, data]
+            return msgtip, ret
+        except Exception as e:
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '读取文件失败', "", '']
+            ret = ['0', REQmsg[1], -1, file_size, data]
+            return msgtip, ret
+
+
+    def algorithmTemplate(self, macAddr, REQmsg):
+        try:
+            path = self.appUtil.root_path + "/classifier/algorithms/"
+            with open(path + "trainTemplate.py", 'r', encoding='utf-8') as f:
+                train_alg = f.read()
+            with open(path + "testTemplate.py", 'r', encoding='utf-8') as f:
+                test_alg = f.read()
+            with open(path + "predictTemplate.py", 'r', encoding='utf-8') as f:
+                predict_alg = f.read()
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '查询文件成功', "", '']
+            ret = ['1', REQmsg[1], train_alg, test_alg, predict_alg]
+            return msgtip, ret
+        except Exception as e:
+            print('algorithmTemplate', e)
+            msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '查询文件不成功', "", '']
+            ret = ['0', REQmsg[1], f"应答{REQmsg[0]}查询文件不成功"]
+            return msgtip, ret
 
     def getAlgorithmInfo(self, macAddr, REQmsg):
         try:

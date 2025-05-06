@@ -6,7 +6,7 @@ class testAlgorithm(AlgorithmTemplate):
     def __init__(self, modelFileName, testingSetFilename):
         super().__init__(modelFileName)
         self.testingSetFilename = testingSetFilename
-        self.model_dict = None
+        self.model = None
         self.test_performance = None
         self.test_set = None
         self.test_label = None
@@ -17,8 +17,8 @@ class testAlgorithm(AlgorithmTemplate):
     def test(self):
         pass
 
-    def load(self, model):
-        self.model_dict = torch.load(model, weights_only=False)
+    def load(self):
+        self.model = torch.load(self.modelFileName, weights_only=False)
 
     def run(self):
         self.test_set, self.test_label = self.get_dataset(self.testingSetFilename)

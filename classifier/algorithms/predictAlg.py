@@ -5,6 +5,7 @@ import sys
 
 import mne
 import numpy as np
+import torch
 
 from classifier.algorithms.alg import AlgorithmTemplate
 
@@ -51,6 +52,9 @@ class predictAlgorithm(AlgorithmTemplate):
         print("load_model function is called")
         sys.stdout.flush()
         raise Exception
+
+    def load(self):
+        self.model = torch.load(self.modelFileName, weights_only=False)
 
     # 预测算法方法，实际运行需重写该方法
     def predict(self):
