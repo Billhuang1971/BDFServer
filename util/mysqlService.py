@@ -71,13 +71,12 @@ class MySqlService:
             self.putConn(conn)
             return e
 
-
     def myQuery(self, sql):
         try:
             conn = self.getConn()
             cursor = conn.cursor()
             cursor.execute(sql)
-            dataSet=cursor.fetchall()
+            dataSet = cursor.fetchall()
             cursor.close()
             conn.commit()
             self.putConn(conn)
@@ -86,6 +85,7 @@ class MySqlService:
             print(f"myQuery:{e}")
             self.putConn(conn)
             return e
+
     def myQueryExt(self, sql):
         try:
             conn = self.getConn()
