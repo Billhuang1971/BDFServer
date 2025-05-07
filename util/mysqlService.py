@@ -113,6 +113,28 @@ class MySqlService:
             self.putConn(conn)
             return e
 
+    # TODO:考虑用这个替换myExecuteSql
+    def myExecuteSqlNew(self, parmSql, params=None):
+        conn = None
+        try:
+            conn = self.getConn()
+            cursor = conn.cursor()
+
+            if params:
+                cursor.execute(parmSql, params)
+            else:
+                cursor.execute(parmSql)
+
+            cursor.close()
+            conn.commit()
+            self.putConn(conn)
+            return ""
+        except Exception as e:
+            print(f"myExecuteSql: {e}")
+            if conn:
+                self.putConn(conn)
+            return e
+
     def myExecuteSqlWithParm(self, parmSql, parmValue):
         try:
             conn = self.getConn()

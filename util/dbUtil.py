@@ -544,6 +544,27 @@ class dbUtil(MySqlService):
         return '1', config_info
 
     # 添加标注主题信息
+    # def add_themeInfo(self, theme_info):
+    #     try:
+    #         uid = theme_info[0]
+    #         theme_name = theme_info[1]
+    #         config_id = theme_info[2]
+    #         theme_state = theme_info[3]
+    #         theme_description = theme_info[4]
+    #         sql = f"insert into theme(name, description, uid, config_id, state) values ('{theme_name}','{theme_description}', '{uid}', '{config_id}', '{theme_state}')"
+    #         flag = self.myExecuteSql(sql)
+    #         if flag == "":
+    #             return [True, None]
+    #         else:
+    #             if str(flag).find('Duplicate') != -1:
+    #                 flag = "标注主题名重复，添加标注主题失败！！！！"
+    #             else:
+    #                 flag = str(flag)
+    #             return [False, flag]
+    #     except Exception as e:
+    #         print('add_themeInfo', e)
+    #         return [False, str(e)]
+
     def add_themeInfo(self, theme_info):
         try:
             uid = theme_info[0]
@@ -551,8 +572,13 @@ class dbUtil(MySqlService):
             config_id = theme_info[2]
             theme_state = theme_info[3]
             theme_description = theme_info[4]
-            sql = f"insert into theme(name, description, uid, config_id, state) values ('{theme_name}','{theme_description}', '{uid}', '{config_id}', '{theme_state}')"
-            flag = self.myExecuteSql(sql)
+
+            # 使用参数化语句
+            sql = "INSERT INTO theme(name, description, uid, config_id, state) VALUES (%s, %s, %s, %s, %s)"
+            values = (theme_name, theme_description, uid, config_id, theme_state)
+
+            flag = self.myExecuteSqlNew(sql, values)
+
             if flag == "":
                 return [True, None]
             else:
