@@ -73,7 +73,7 @@ class trainAlgorithm(AlgorithmTemplate):
 
     def run(self):
         self.train_set, self.train_label = self.get_dataset(self.trainingSetFilename)
-        self.train_label = self.label_transfer(self.train_label)
+        # self.train_label = self.label_transfer(self.train_label)
         self.train()
         self.result = True
         print("train_performance:{}finish, result:{}finished".format(self.train_performance, self.result))
