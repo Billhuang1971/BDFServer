@@ -6008,11 +6008,13 @@ class server(socketServer):
                     "typeID": str(typeID)
                 })
                 content_dict[key]["file_name"]=file_name
-            for file in content_dict:  # 每个文件分开取
+            for key in content_dict:  # 每个文件分开取
+                file=content_dict[key]
                 result= self.appUtil.getDefChannels(file['fileName'])
-                channels.append([result,file['file_name']])
+                result_set = set(result)
+                channels.append([result_set,file['file_name']])
             msgtip = [cmdID, f"获取数据集构造所需的通道信息", '', '']
-            ret = ['1', cmdID, f"获取数据集构造所需的通道信息", channels]
+            ret = ['1', cmdID, f"获取数据集构造所需的通道信息", channels] #返回通道和客户端显示的文件名
             return msgtip, ret
         except Exception as e:
             print('channel_match', e)

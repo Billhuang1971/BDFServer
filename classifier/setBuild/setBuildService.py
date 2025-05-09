@@ -190,9 +190,10 @@ class setBuildService:
         if self.isDefault: #波形和状态的default分支
             self.channels = self.appUtil.getDefChannels(fileName)
             data = json.loads(self.description)
-            data['channels']=self.channels
-            modified_json=json.dumps(data)
-            self.description=modified_json
+            if data['type'] != 'wave':
+                data['channels']=self.channels
+                modified_json=json.dumps(data)
+                self.description=modified_json
 
         print(f'channels: {self.channels}')
         if self.type == 'state' and (not self.isDefault):
