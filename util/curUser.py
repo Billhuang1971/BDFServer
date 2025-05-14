@@ -21,11 +21,11 @@ class curUser:
         #                    }
         # F中的数字对应代表该身份不能使用的菜单项编号，登录时初始化用户权限
         self.authority = {
-             'adminF': [6, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 29, 30, 31, 32, 33],
-            'labelerF': [3, 4, 5, 7, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 27, 28,29, 30, 31, 32, 33],
-            'studentF': [3, 4, 5, 6, 7, 10, 12, 14, 15, 16, 17, 21, 22, 23, 24, 25, 27, 28,29, 30, 31, 32, 33],
-            'teacherF': [3, 4, 5, 7, 12, 15, 16, 18, 19, 21, 22, 23, 24, 25, 27, 28,29, 30, 31, 32, 33],
-            'doctorF': [3, 4, 5, 7, 17, 18, 19, 20, 21, 22, 24, 25, 27, 28,29, 30, 31, 32, 33],
+             'adminF': [6, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 29, 30, 31, 32, 33, 34],
+            'labelerF': [3, 4, 5, 7, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 27, 28,29, 30, 31, 32, 33, 34],
+            'studentF': [3, 4, 5, 6, 7, 10, 12, 14, 15, 16, 17, 21, 22, 23, 24, 25, 27, 28,29, 30, 31, 32, 33, 34],
+            'teacherF': [3, 4, 5, 7, 12, 15, 16, 18, 19, 21, 22, 23, 24, 25, 27, 28,29, 30, 31, 32, 33, 34],
+            'doctorF': [3, 4, 5, 7, 17, 18, 19, 20, 21, 22, 24, 25, 27, 28,29, 30, 31, 32, 33, 34],
             'researcherF': [3, 4, 5, 7, 12, 15, 17, 18, 19, 20],
             'adminT': ['pwd', 'userManager', 'quit', 'logout', 'labelType', 'basicConfig', 'montage'],
             'labelerT': ['pwd', 'quit', 'logout', 'configOptions', 'reserching', 'EEG'],
@@ -33,7 +33,9 @@ class curUser:
             'teacherT': ['pwd', 'quit', 'logout', 'configOptions', 'manualQuery', 'consulting', 'createLesson','testAssess','reserching', 'patientManager', "EEG"],
             'doctorT': ['pwd', 'quit', 'logout', 'patientManager', 'configOptions', 'manual', 'manualQuery',
                         'consulting', 'createCons', 'dataImport','testAssess','reserching', 'EEG'],
-            'researcherT': ['pwd', 'quit', 'logout', 'configOptions', 'manualQuery', 'consulting', 'reserching','reserchingQuery', 'setBuild','delSet_info', 'algorithm', 'taskSettings', 'modelTrain', 'classifier', 'sampleState', 'patientManager', 'modelTest', 'detailLook', 'auto', 'clearLabel', 'assessLabel', "EEG"],
+            'researcherT': ['pwd', 'quit', 'logout', 'configOptions', 'manualQuery', 'consulting', 'reserching','reserchingQuery', 'setBuild','delSet_info', 'algorithm',
+                        'taskSettings', 'modelTrain', 'classifier', 'sampleState', 'patientManager', 'modelTest', 'detailLook', 'auto', 'clearLabel', 'assessLabel', 'EEG',
+                        'researchImport'],
         }
 
     def login(self, userAccount, pwd, macAddr):

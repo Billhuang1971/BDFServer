@@ -199,6 +199,69 @@ class server(socketServer):
                 tipmsg, ret = self.getUserConfig(REQmsg)
                 REQmsg[3] = ret
 
+            # 科研导入模块
+            # 获取病人诊断信息
+            elif cmd == 'researchImport' and cmdID == 1:
+                tipmsg, ret = self.getPatientCheckInfo1(REQmsg)
+                REQmsg[3] = ret
+            # 删除病人诊断信息
+            elif cmd == 'researchImport' and cmdID == 2:
+                tipmsg, ret = self.delPatientCheckInfo1(REQmsg)
+                REQmsg[3] = ret
+            # 添加病人检查信息
+            elif cmd == 'researchImport' and cmdID == 3:
+                tipmsg, ret = self.addCheckInfo1(REQmsg)
+                REQmsg[3] = ret
+            # 检查脑电文件配置
+            elif cmd == 'researchImport' and cmdID == 4:
+                tipmsg, ret = self.checkConfig1(REQmsg)
+                REQmsg[3] = ret
+            # 写脑电请求
+            elif cmd == 'researchImport' and cmdID == 5:
+                print("这里的REQmsg：", REQmsg)
+                tipmsg, ret = self.writeEEG1(REQmsg)
+                REQmsg[3] = ret
+            # 更新脑电检查信息请求
+            elif cmd == 'researchImport' and cmdID == 6:
+                tipmsg, ret = self.updateCheckInfo1(REQmsg)
+                REQmsg[3] = ret
+            # 获取脑电检查信息
+            elif cmd == 'researchImport' and cmdID == 7:
+                tipmsg, ret = self.getFileInfo1(REQmsg)
+                REQmsg[3] = ret
+            # 获取病人详细信息
+            elif cmd == 'researchImport' and cmdID == 8:
+                tipmsg, ret = self.getChoosePatientInfo1(REQmsg)
+                REQmsg[3] = ret
+            # 获取医生详细信息
+            elif cmd == 'researchImport' and cmdID == 9:
+                tipmsg, ret = self.getChooseResearcherInfo1(REQmsg)
+                REQmsg[3] = ret
+            # 生成文件名请求
+            elif cmd == 'researchImport' and cmdID == 10:
+                print("这里生成文件名的REQmsg是：", REQmsg)
+                tipmsg, ret = self.makeFileName2(REQmsg)
+                REQmsg[3] = ret
+            # 删除脑电检查文件
+            elif cmd == 'researchImport' and cmdID == 11:
+                tipmsg, ret = self.delFileInfo1(REQmsg)
+                REQmsg[3] = ret
+            # 获取当前用户配置信息
+            elif cmd == 'researchImport' and cmdID == 12:
+                tipmsg, ret = self.getUserConfig1(REQmsg)
+                REQmsg[3] = ret
+            # 选定标注类型
+            elif cmd == 'researchImport' and cmdID == 13:
+                tipmsg, ret = self.getChooseLabelTypeInfo1(REQmsg)
+                REQmsg[3] = ret
+            # 批量插入样本信息
+            elif cmd =='researchImport' and cmdID == 14:
+                tipmsg, ret = self.insertSampleInfoBatch(REQmsg)
+                REQmsg[3] = ret
+
+
+
+
 
             # 任务设置模块
             # 获取标注主题信息
@@ -2157,6 +2220,469 @@ class server(socketServer):
             msgtip = [account, f"医生详细信息查询失败:{e}", '', '']
             ret = ['0', REQmsg[1], f"医生详细信息查询失败:{e}", [None, None, None, None, None]]
             return msgtip, ret
+
+    # 科研导入模块
+    def getPatientCheckInfo1(self, REQmsg):
+        try:
+            print('getPatientCheckInfo1')
+            account = REQmsg[3][0]
+            uid = REQmsg[3][1]
+            value = REQmsg[3][2]
+            rpc, patientCheck_info = self.dbUtil.get_patientCheckInfo(uid)
+            rf, file_info = self.dbUtil.get_fileInfo_detail(uid)
+            if (rpc or rf) == '0':
+                print("patientCheck_info:", patientCheck_info)
+                print("file_info:", file_info)
+                account = REQmsg[3][0]
+                patientCheck_info = None
+                patient_info = None
+                researcher_info = None
+                file_info = None
+                msgtip = [account, f"查询病人诊断信息失败", '', '']
+                ret = ['0', REQmsg[1], f"查询病人诊断信息失败,操作数据库出错",
+                       [patientCheck_info, patient_info, researcher_info, file_info]]
+                return msgtip, ret
+            else:
+                msgtip = [account, f"查询病人诊断信息成功", '', '']
+                ret = ['1', REQmsg[1], f"查询病人诊断成功", [patientCheck_info, None, None, file_info]]
+                return msgtip, ret
+        except Exception as e:
+            print('getPatientCheckInfo1', e)
+            account = REQmsg[3][0]
+            patientCheck_info = None
+            patient_info = None
+            researcher_info = None
+            file_info = None
+            msgtip = [account, f"查询病人诊断信息失败:{e}", '', '']
+            ret = ['0', REQmsg[1], f"查询病人诊断信息失败:{e}",
+                   [patientCheck_info, patient_info, researcher_info, file_info]]
+            return msgtip, ret
+
+
+    # 根据传入参数删除数据库病人诊断信息
+    # 不仅要删除检查信息，相关脑电记录（包括文件和数据库记录）都需要删除
+
+    def delPatientCheckInfo1(self, REQmsg):
+        try:
+            account = REQmsg[3][0]
+            check_info = REQmsg[3][1:]
+            check_id = check_info[0]
+            result = self.dbUtil.del_patientCheckInfo('check_id', check_id)
+            if result:
+                result_1 = self.appUtil.removeFile(check_id=check_id)
+                if result_1:
+                    msgtip = [account, f"删除病人诊断信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"删除病人诊断信息成功", check_info]
+                    return msgtip, ret
+                else:
+                    msgtip = [account, f"删除病人诊断信息成功,删除远程脑电文件失败", '', '']
+                    ret = ['0', REQmsg[1], f"删除病人诊断信息成功,删除远程脑电文件失败", check_info]
+                    return msgtip, ret
+            else:
+                msgtip = [account, f"删除病人诊断信息失败", '', '']
+                ret = ['0', REQmsg[1], f"删除病人诊断信息失败", check_info]
+                return msgtip, ret
+        except Exception as e:
+            print('delPatientCheckInfo1', e)
+            account = REQmsg[3][0]
+            msgtip = [account, f"删除病人诊断信息失败:{e}", '', '']
+            ret = ['0', REQmsg[1], f"删除病人诊断信息失败:{e}", None]
+            return msgtip, ret
+
+        # 根据传入参数增加数据库病人检查信息
+
+    def addCheckInfo1(self, REQmsg):
+        try:
+            account = REQmsg[3][0]
+            check_info = REQmsg[3][1:]
+            result = self.dbUtil.add_checkInfo(check_info)
+            if result[0] == '1':
+                msgtip = [account, result[1], '', '']
+                ret = ['1', REQmsg[1], result[1], check_info]
+                return msgtip, ret
+            else:
+                msgtip = [account, result[1], '', '']
+                ret = ['0', REQmsg[1], result[1], check_info]
+                return msgtip, ret
+        except Exception as e:
+            print('addCheckInfo1', e)
+            account = REQmsg[3][0]
+            msgtip = [account, f"添加脑电检查信息失败：{e}", '', '']
+            ret = ['0', REQmsg[1], f"添加脑电检查信息失败：{e}", None]
+            return msgtip, ret
+
+    def getUserConfig1(self, REQmsg):
+        try:
+            account = REQmsg[3][0]
+            # 获取用户基本配置信息
+            config_id = REQmsg[3][1]
+            ru, user_config = self.dbUtil.query_configData('config_id', config_id)
+            if ru == '1':
+                if user_config:
+                    user_config = user_config[0]
+                    user_config = user_config[2:-1]
+                    msgtip = [account, f"获取脑电文件配置成功", '', '']
+                    ret = ['1', REQmsg[1], f"获取脑电文件配置成功", [user_config]]
+                    return msgtip, ret
+        except Exception as e:
+            print('getUserConfig', e)
+
+    def checkConfig1(self, REQmsg):
+        try:
+            account = REQmsg[3][0]
+            user_id = REQmsg[3][1]
+            filemsg = REQmsg[3][2]
+            freq = REQmsg[3][3]
+            # 获取用户基本配置信息
+            config_id = filemsg[4]
+            ru, user_config = self.dbUtil.query_configData('config_id', config_id)
+            if ru == '1':
+                # 截取最需要的部分
+                # [sampling_rate, notch, low_pass, high_pass]
+                # user_config = (250, 50, 100, 0.5)
+                if user_config:
+                    user_config = user_config[0]
+                    user_config = user_config[2:-1]
+
+                    sampling_rate = int(user_config[0])
+                    # 判断用户当前配置是否适合处理该脑电文件
+                    if (freq > sampling_rate):
+                        msgtip = [account, f"检查脑电文件配置成功", '', '']
+                        ret = ['1', REQmsg[1], f"检查脑电文件配置成功", [user_config], filemsg]
+                        return msgtip, ret
+                    # 较低采样率不进行转化
+                    else:
+                        msgtip = [account, f"当前脑电文件采样率为:{freq}和用户基本配置采样率:{sampling_rate}不符!!!!", '', '']
+                        ret = ['2', REQmsg[1], f"当前脑电文件采样率为:{freq}和用户基本配置采样率:{sampling_rate}不符!!!!\n请重新去配置选择模块选合适的功能！！",[user_config]]
+                        return msgtip, ret
+                else:
+                    msgtip = [account, f"未在数据库找到当前配置信息！！", '', '']
+                    ret = ['0', REQmsg[1], f"未在数据库找到当前配置信息！！", [None]]
+                    return msgtip, ret
+            else:
+                msgtip = [account, f"获取配置失败", '', '']
+                ret = ['0', REQmsg[1], f"获取配置失败", [None]]
+                return msgtip, ret
+        except Exception as e:
+            print('checkConfig1', e)
+            account = REQmsg[3][0]
+            msgtip = [account, f"脑电上传失败:{e}", '', '']
+            ret = ['0', REQmsg[1], f"脑电上传失败:{e}", [None]]
+            return msgtip, ret
+
+    # 生成文件名
+    def makeFileName2(self,REQmsg):
+        msgtip ,ret = self.EEGUploadService.makeFileName(REQmsg)
+        return msgtip ,ret
+
+    # 根据传入参数写入脑电数据
+    def writeEEG1(self,REQmsg):
+        try:
+            print("writeEEG里的REQmSG:",REQmsg)
+            msgtip,ret = self.EEGUploadService.writeEEG(REQmsg)
+            print("EEGUpload返回的信息：{msgtip}---{ret}",msgtip,ret)
+            return msgtip,ret
+        except Exception as e:
+            print("writeEEG1",e)
+
+    # 根据传入参数更新数据库脑电检查信息
+    def updateCheckInfo1(self, REQmsg):
+        try:
+            account = REQmsg[3][0]
+            state = REQmsg[3][1]
+            checkInfo = REQmsg[3][2]
+            if state == 'Send':
+                result = self.dbUtil.update_checkInfo(checkInfo)
+                if result:
+                    check_id = checkInfo[0]
+                    result = self.dbUtil.del_fileInfo(check_id=check_id, state='notUploaded')
+                    if result:
+                        msgtip = [account, f"修改脑电检查信息并删除多余file_info信息成功", '', '']
+                        ret = ['1', REQmsg[1], f"修改脑电检查信息并删除多余file_info信息成功", checkInfo]
+                        return msgtip, ret
+                else:
+                    msgtip = [account, f"修改脑电检查信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"修改脑电检查信息失败", checkInfo]
+                    return msgtip, ret
+            elif state == 'Update':
+                pass
+            else:
+                msgtip = [account, f"无法处理此类型信息", '', '']
+                ret = ['0', REQmsg[1], f"发送脑电检查信息上传完成失败", checkInfo]
+                return msgtip, ret
+        except Exception as e:
+            print('updateCheckInfo1', e)
+            account = REQmsg[3][0]
+            msgtip = [account, f"脑电检查信息更新出错！！{e}", '', '']
+            ret = ['0', REQmsg[1], f"脑电检查信息更新出错！！{e}", None]
+            return msgtip, ret
+
+        # 根据传入参数获取脑电检查信息
+
+    def getFileInfo1(self, REQmsg):
+        try:
+            account = REQmsg[3][0]
+            uid = REQmsg[3][1]
+            value = REQmsg[3][2]
+            rf, file_info = self.dbUtil.get_fileInfo_detail(uid)
+            if rf == '1':
+                msgtip = [account, f"查询脑电数据信息成功", '', '']
+                ret = ['1', REQmsg[1], f"查询脑电数据信息成功", file_info]
+                return msgtip, ret
+            else:
+                file_info = None
+                msgtip = [account, f"查询脑电数据信息失败", '', '']
+                ret = ['0', REQmsg[1], f"查询脑电数据信息失败", file_info]
+                return msgtip, ret
+        except Exception as e:
+            print('getFileInfo1', e)
+            account = REQmsg[3][0]
+            msgtip = [account, f"查询脑电数据信息失败:{e}", '', '']
+            ret = ['0', REQmsg[1], f"查询脑电数据信息失败:{e}", None]
+            return msgtip, ret
+
+    def delFileInfo1(self,REQmsg):
+        print('delFileInfo:', REQmsg)
+        try:
+            account = REQmsg[3][0]
+            check_id = REQmsg[3][1]
+            file_id = REQmsg[3][2]
+            rt = self.dbUtil.del_fileInfo(check_id=check_id, state='', file_id=file_id, flag='')
+            if rt:
+                msgtip = [account, "删除脑电文件信息成功或无对应信息需要删除",'','']
+                ret = ['1',REQmsg[1],"删除脑电文件信息成功或无对应信息需要删除",None]
+                return msgtip, ret
+            else:
+                msgtip = [account, "删除脑电文件信息失败", '', '']
+                ret = ['0', REQmsg[1], "删除脑电文件信息失败", None]
+                return msgtip, ret
+
+        except Exception as e:
+            msgtip = [account, f"删除脑电文件信息失败{e}", '', '']
+            ret = ['0', REQmsg[1], f"删除脑电文件信息失败{e}", None]
+            return msgtip, ret
+            print('delFileInfo1', e)
+
+
+    def getChoosePatientInfo1(self, REQmsg):
+        try:
+            account = REQmsg[3][0]
+            flag = REQmsg[3][1]
+            # 获取所有病人信息
+            if flag == '1':
+                perNum = REQmsg[3][2]
+                rp, patient_info, totalNum = self.dbUtil.get_patientIdName(flag='1', offset=perNum)
+                if rp == '1':
+                    msgtip = [account, f"查询病人详细信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询病人详细信息成功",
+                           [flag, patient_info, totalNum]]
+                    return msgtip, ret
+
+                else:
+                    msgtip = [account, f"查询病人详细信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询病人详细信息失败", [flag, None, None]]
+                    return msgtip, ret
+            # 获取无条件翻页病人信息
+            elif flag == '2':
+                perNum = REQmsg[3][2]
+                start = REQmsg[3][3]
+                rt, patient_info = self.dbUtil.get_patientIdName(flag='2', start=start, offset=perNum)
+                if rt == '1':
+                    msgtip = [account, f"查询病人信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询病人信息成功", [flag, patient_info]]
+                    return msgtip, ret
+                else:
+                    msgtip = [account, f"查询病人信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询病人信息失败",
+                           [flag, None]]
+                    return msgtip, ret
+
+            # 获取病人信息的重置
+            elif flag == '3':
+                perNum = REQmsg[3][2]
+                rp, patient_info, totalNum = self.dbUtil.get_patientIdName(flag='1', offset=perNum)
+                if rp == '1':
+                    msgtip = [account, f"查询病人详细信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询病人详细信息成功",
+                           [flag, patient_info, totalNum]]
+                    return msgtip, ret
+                else:
+                    msgtip = [account, f"查询病人详细信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询病人详细信息失败", [flag, None, None]]
+                    return msgtip, ret
+            # 有条件获取病人信息首页
+            elif flag == '4':
+                perNum = REQmsg[3][2]
+                key_word = REQmsg[3][3]
+                key_value = REQmsg[3][4]
+                rp, patient_info, totalNum = self.dbUtil.get_patientIdName(flag='1', offset=perNum, where_name=key_word,
+                                                                           where_value=key_value)
+                if rp == '1':
+                    msgtip = [account, f"查询病人详细信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询病人详细信息成功",
+                           [flag, patient_info, totalNum]]
+                    return msgtip, ret
+                else:
+                    msgtip = [account, f"查询病人详细信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询病人详细信息失败", [flag, None, None]]
+                    return msgtip, ret
+            # 获取有条件翻页病人信息
+            elif flag == '5':
+                perNum = REQmsg[3][2]
+                start = REQmsg[3][3]
+                key_word = REQmsg[3][4]
+                key_value = REQmsg[3][5]
+                rt, patient_info = self.dbUtil.get_patientIdName(flag='2', start=start, offset=perNum,
+                                                                 where_name=key_word, where_value=key_value)
+                if rt == '1':
+                    msgtip = [account, f"查询病人信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询病人信息成功", [flag, patient_info]]
+                    return msgtip, ret
+                else:
+                    msgtip = [account, f"查询病人信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询病人信息失败",
+                           [flag, None]]
+                    return msgtip, ret
+
+        except Exception as e:
+            print('getChoosePatientInfo1', e)
+            account = REQmsg[3][0]
+            msgtip = [account, f"病人详细信息查询失败:{e}", '', '']
+            ret = ['0', REQmsg[1], f"病人详细信息查询失败:{e}", [None, None, None, None, None]]
+            return msgtip, ret
+
+        # 获取研究员详细信息
+
+    def getChooseResearcherInfo1(self, REQmsg):
+        try:
+            account = REQmsg[3][0]
+            flag = REQmsg[3][1]
+            # 获取所有研究员信息
+            if flag == '1':
+                perNum = REQmsg[3][2]
+                rp, researcher_info, totalNum = self.dbUtil.get_researcherIdName(flag='1', offset=perNum)
+                if rp == '1':
+                    msgtip = [account, f"查询研究员详细信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询研究员详细信息成功",
+                           [flag, researcher_info, totalNum]]
+                    return msgtip, ret
+
+                else:
+                    msgtip = [account, f"查询研究员详细信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询研究员详细信息失败", [flag, None, None]]
+                    return msgtip, ret
+
+
+            # 获取无条件翻页研究员信息
+            elif flag == '2':
+                perNum = REQmsg[3][2]
+                start = REQmsg[3][3]
+                rt, researcher_info = self.dbUtil.get_researcherIdName(flag='2', start=start, offset=perNum)
+                if rt == '1':
+                    msgtip = [account, f"查询研究员信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询研究员信息成功", [flag, researcher_info]]
+                    return msgtip, ret
+                else:
+                    msgtip = [account, f"查询研究员信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询研究员信息失败",
+                           [flag, None]]
+                    return msgtip, ret
+
+            # 获取研究员信息的重置
+            elif flag == '3':
+                perNum = REQmsg[3][2]
+                rp, researcher_info, totalNum = self.dbUtil.get_researcherIdName(flag='1', offset=perNum)
+                if rp == '1':
+                    msgtip = [account, f"查询研究员详细信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询研究员详细信息成功",
+                           [flag, researcher_info, totalNum]]
+                    return msgtip, ret
+                else:
+                    msgtip = [account, f"查询研究员详细信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询研究员详细信息失败", [flag, None, None]]
+                    return msgtip, ret
+            # 有条件获取研究员信息首页
+            elif flag == '4':
+                perNum = REQmsg[3][2]
+                key_word = REQmsg[3][3]
+                key_value = REQmsg[3][4]
+                rp, researcher_info, totalNum = self.dbUtil.get_researcherIdName(flag='1', offset=perNum, where_name=key_word,
+                                                                         where_value=key_value)
+                if rp == '1':
+                    msgtip = [account, f"查询研究员详细信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询研究员详细信息成功",
+                           [flag, researcher_info, totalNum]]
+                    return msgtip, ret
+                else:
+                    msgtip = [account, f"查询研究员详细信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询研究员详细信息失败", [flag, None, None]]
+                    return msgtip, ret
+            # 获取有条件翻页研究员信息
+            elif flag == '5':
+                perNum = REQmsg[3][2]
+                start = REQmsg[3][3]
+                key_word = REQmsg[3][4]
+                key_value = REQmsg[3][5]
+                rt, researcher_info = self.dbUtil.get_researcherIdName(flag='2', start=start, offset=perNum,
+                                                               where_name=key_word, where_value=key_value)
+                if rt == '1':
+                    msgtip = [account, f"查询研究员信息成功", '', '']
+                    ret = ['1', REQmsg[1], f"查询研究员信息成功", [flag, researcher_info]]
+                    return msgtip, ret
+                else:
+                    msgtip = [account, f"查询研究员信息失败", '', '']
+                    ret = ['0', REQmsg[1], f"查询研究员信息失败",
+                           [flag, None]]
+                    return msgtip, ret
+
+        except Exception as e:
+            print('getChooseResearcherInfo1', e)
+            account = REQmsg[3][0]
+            msgtip = [account, f"研究员详细信息查询失败:{e}", '', '']
+            ret = ['0', REQmsg[1], f"研究员详细信息查询失败:{e}", [None, None, None, None, None]]
+            return msgtip, ret
+
+
+    def getChooseLabelTypeInfo1(self,REQmsg):
+        try:
+            account = REQmsg[3][0]
+            name = ''
+            value = ''
+            type_info = self.dbUtil.get_typeInfo(name, value)
+            if type_info:
+                msgtip = [account, f"查询标注类型信息成功", '', '']
+                ret = ['1', REQmsg[1], f"查询标注类型信息成功", type_info]
+                return msgtip, ret
+            else:
+                msgtip = [account, f"查询标注类型信息失败", '', '']
+                ret = ['0', REQmsg[1], f"查询标注类型信息失败", type_info]
+                return msgtip, ret
+        except Exception as e:
+            print('getChooseLabelTypeInfo1', e)
+            account = REQmsg[3][0]
+            msgtip = [account, f"查询标注类型信息失败:{e}", '', '']
+            ret = ['0', REQmsg[1], f"查询标注类型信息失败:{e}", '']
+            return msgtip, ret
+
+    # Fixme:这里的account好像是user_id, 回头可以改一下
+    # 批量插入样本
+    def insertSampleInfoBatch(self, REQmsg):
+        try:
+            account = REQmsg[2]
+            sample_info = REQmsg[3]  # 取出样本信息列表
+            print("sample_info 准备插入：", sample_info)
+            result = self.dbUtil.insert_sampleInfo_batch(sample_info)
+            if result:
+                msgtip = [account, f'批量添加样本信息成功', '', '']
+                ret = ['1', REQmsg[1], f'批量添加样本信息成功', sample_info]
+                return msgtip, ret
+            else:
+                msgtip = [account, f'批量添加样本信息失败', '', '']
+                ret = ['0', REQmsg[1], f'批量添加样本信息失败', sample_info]
+                return msgtip, ret
+        except Exception as e:
+            print("insertSampleInfoBatch 错误:", e)
+
 
     # 任务设置
     # 根据传入参数获取标注主题信息

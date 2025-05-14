@@ -178,3 +178,18 @@ class MySqlService:
             print(f"myExecuteTranSql:{e}")
             self.putConn(conn)
             return '0',f'{e}'
+
+        # 批量插入
+    def myExecuteMany(self, sql, data):
+        conn = self.getConn()
+        try:
+            cursor = conn.cursor()
+            cursor.executemany(sql, data)
+            cursor.close()
+            conn.commit()
+        except Exception as e:
+            print("myExecuteMany 错误:", e)
+            conn.rollback()
+            raise
+        finally:
+            self.putConn(conn)

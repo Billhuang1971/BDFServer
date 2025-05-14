@@ -248,6 +248,43 @@ class dbUtil(MySqlService):
                 return '0', None
             return '1', doctor_info
 
+     # 获取研究员id和名字
+    def get_researcherIdName(self, where_name='', where_value='', flag='', start=None, offset=None):
+        # 没有条件查询所有的病人信息
+        if where_name == '' and flag == '1':
+            sql = f"select uid, name, phone, email FROM user_info where researcher = 1 limit 0,{offset}"
+            sql1 = f"SELECT count(*) from user_info where researcher = 1 "
+        # 没有条件分页信息
+        elif where_name == '' and flag == '2':
+            sql = f"select uid, name, phone, email FROM user_info where researcher = 1 limit {start},{offset}"
+        # 获取搜索满足条件的病人信息
+        elif where_name != '' and flag == '1':
+            # 当搜索框有信息的时候
+            sql = f"select uid, name, phone, email FROM user_info WHERE {where_name} LIKE '%{where_value}%' and researcher=1 limit 0,{offset}"
+            sql1 = f"SELECT count(*) from user_info WHERE {where_name} LIKE '%{where_value}%' and researcher=1"
+
+        # 查询有条件的病人信息翻页
+        elif where_name != '' and flag == '2':
+            sql = f"select uid, name, phone, email FROM user_info WHERE {where_name} LIKE '%{where_value}%' and researcher limit {start},{offset}"
+        else:
+            pass
+
+        if flag == '1':
+            try:
+                researcher_info = self.myQuery(sql)
+                totalNUm = self.myQuery(sql1)
+            except Exception as e:
+                print('get_researcherIdName', e)
+                return '0', None, None
+            return '1', researcher_info, totalNUm[0][0]
+        else:
+            try:
+                researcher_info = self.myQuery(sql)
+            except Exception as e:
+                print('get_researcherIdName', e)
+                return '0', None
+            return '1', researcher_info
+
     # 获取用户id和名字
     def get_userIdName(self, where_name, where_value, flag=''):
         if flag == '1':
@@ -1145,6 +1182,22 @@ class dbUtil(MySqlService):
         except Exception as ex:
             return '0', f"{ex}"
         return "1", None
+
+    def insert_sampleInfo_batch(self, sample_info):
+        """
+        批量插入 sample_info 记录
+        :param sample_info: [[check_id, file_id, begin, channel, end, uid, type_id], ...]
+        """
+        try:
+            sql = (
+                "INSERT INTO sample_info (check_id, file_id, begin, channel, end, uid, type_id) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            )
+            self.myExecuteMany(sql, sample_info)
+            return True
+        except Exception as e:
+            print("insert_sampleInfo_batch 错误:", e)
+            return False
 
     # zh 添加样本
     def add_sampleInfo(self, check_id, file_id, begin, channel, end, uid, type_id):
