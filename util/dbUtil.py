@@ -348,13 +348,13 @@ class dbUtil(MySqlService):
             print("update_checkInfo", e)
 
     # 获取右下角展示的脑电文件数据信息
-    def get_fileInof_detail(self, where_value=''):
+    def get_fileInfo_detail(self, where_value=''):
         if where_value != '':
             sql = f"select file_info.check_id, file_info.file_id, file_info.state from file_info  LEFT OUTER JOIN check_info on file_info.check_id = check_info.check_id WHERE check_info.cUid={where_value} and check_info.state in ('notUploaded', 'uploading') "
         try:
             file_info = self.myQuery(sql)
         except Exception as e:
-            print('get_fileInof_detail', e)
+            print('get_fileInfo_detail', e)
             return '0', None
         return '1', file_info
 

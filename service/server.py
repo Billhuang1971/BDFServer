@@ -1745,7 +1745,7 @@ class server(socketServer):
             uid = REQmsg[3][1]
             value = REQmsg[3][2]
             rpc, patientCheck_info = self.dbUtil.get_patientCheckInfo(uid)
-            rf, file_info = self.dbUtil.get_fileInof_detail(uid)
+            rf, file_info = self.dbUtil.get_fileInfo_detail(uid)
             if (rpc or rf) == '0':
                 print("patientCheck_info:", patientCheck_info)
                 print("file_info:", file_info)
@@ -1831,7 +1831,7 @@ class server(socketServer):
         try:
             account = REQmsg[3][0]
             # 获取用户基本配置信息
-            config_id = REQmsg[3][2]
+            config_id = REQmsg[3][1]
             ru, user_config = self.dbUtil.query_configData('config_id', config_id)
             if ru == '1':
                 if user_config:
@@ -1940,7 +1940,7 @@ class server(socketServer):
             account = REQmsg[3][0]
             uid = REQmsg[3][1]
             value = REQmsg[3][2]
-            rf, file_info = self.dbUtil.get_fileInof_detail(uid)
+            rf, file_info = self.dbUtil.get_fileInfo_detail(uid)
             if rf == '1':
                 msgtip = [account, f"查询脑电数据信息成功", '', '']
                 ret = ['1', REQmsg[1], f"查询脑电数据信息成功", file_info]
