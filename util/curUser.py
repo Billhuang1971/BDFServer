@@ -144,7 +144,7 @@ class curUser:
             print('permission', e)
 
     def setUserPermission(self, admin, labeler, student, teacher, doctor, researcher):
-        permission_list = [i for i in range(2, 34)]
+        permission_list = [i for i in range(2, 35)]
         print(f'permission_list11: {permission_list}')
         if admin:
             permission_list = set(permission_list) & set(self.authority['adminF'])
