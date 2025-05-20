@@ -113,7 +113,9 @@ class ClusterSelectState(stateBuild):
     def _generate_negative_samples(self, D, time_range, current_anno, i):  # i为当前quote下标
         """生成N个负例样本(步骤3的具体实现)"""
         n = 1  # 负例数量
-        max_attempts = 10000  # 防止无限循环
+        max_attempts = int(self.eegLength)  # 防止无限循环
+        fail_count = 0
+        n_select = set() #当前已选的点
 
         while n <= self.negative_regions[i]['quota'] and max_attempts > 0:
             max_attempts -= 1
@@ -125,6 +127,10 @@ class ClusterSelectState(stateBuild):
                 break
             # 随机选取一个点作为负例样本起始
             current_sample = random.randint(time_range[0], time_range[1])  # 脑电时间长度-样本长度，即取样本起始点
+            if current_sample in n_select:  # 限重复
+                continue
+            else:
+                n_select.add(current_sample)
             sample_end = current_sample + self.span  # 样本结束点
             if sample_end >time_range[1]: #不可超过正例起始点
                     continue
@@ -144,11 +150,32 @@ class ClusterSelectState(stateBuild):
                     min_dist = dist
 
             # 检查距离条件
+            if n < 0.7 * self.negative_regions[i]['quota']:
+                max_failure = max(50, int(self.negative_regions[i]['weight'] * 1.2))
+            else:
+                max_failure = max(50, int(self.negative_regions[i]['weight'] * 1))
+            gama=0.8 #可调整
             if min_dist > D:
                 self.negSamples.append(sample)
-                D = min_dist  # 更新距离标准
+                D= gama*min_dist+(1-gama)*D
                 n += 1
-
+            else:  # 以概率接受min_dist≤D的样本
+                beta = 0.1  # β∈[0.3,0.7]：控制概率衰减速度（控制中等难度样本的接受概率）值越小越容易接受靠近正类的样本。
+                p_accept = np.exp(-beta * (D - min_dist))
+                if np.random.rand() < p_accept:
+                    self.negSamples.append(sample)
+                    # D = min_dist  # 更新距离标准
+                    D = gama * min_dist + (1 - gama) * D
+                    n += 1
+                else:
+                    fail_count += 1
+                    if fail_count > max_failure:
+                        if n < 0.7 * self.negative_regions[i]['quota']:  # 自适应回退幅度
+                            D = D * 0.8
+                        else:
+                            D = D * 0.6
+                        fail_count = 0
+                        
         if max_attempts <= 0:
             remaining = self.negative_regions[i]['quota'] - n + 1
             self.negative_regions[i]['residual'] = 0  # 更新当前区间剩余可分配为0（超过迭代次数仍未分配完说明无法找到了）
@@ -177,32 +204,13 @@ class ClusterSelectState(stateBuild):
         return D
 
     def compute_distance(self, sample, sample2):
-        if self.metric == "euclidean":
-            return np.linalg.norm(sample - sample2)
-        elif self.metric == "pearson":
-            return 1 - abs(pearsonr(sample, sample2)[0])  # 相关系数建议用中位数抗噪
-        elif self.metric == "plv":
-            phase1 = np.angle(hilbert(sample))
-            phase2 = np.angle(hilbert(sample))
-            return 1 - abs(np.mean(np.exp(1j * (phase1 - phase2))))
-        # elif self.metric == "sampen":
-        #     return abs(sample_entropy(sample) - sample_entropy(sample2))
-        elif self.metric == 'os':
+        if self.metric == 'os':
             return np.linalg.norm(sample - sample2)
         else:
             raise ValueError("Invalid metric")
 
-    def compute_center(self, class_samples):  # 度量多选一
-        if self.metric == "euclidean":
-            return np.mean(class_samples, axis=0)
-        elif self.metric == "pearson":
-            return np.median(class_samples, axis=0)  # 相关系数建议用中位数抗噪
-        elif self.metric == "plv":
-            phases = [np.angle(hilbert(s)) for s in class_samples]
-            return np.mean(phases, axis=0)  # 相位中心
-        # elif metric == "sampen":
-        #     return class_samples[0]  # 样本熵无显式中心，取第一个样本代表
-        elif self.metric == 'os':
+    def compute_center(self, class_samples):
+        if self.metric == 'os':
             return np.mean(class_samples, axis=0)
         else:
             raise ValueError("Unsupported metric")
@@ -277,65 +285,3 @@ class ClusterSelectState(stateBuild):
                         region['quota'] += 1
                         region['residual'] -= 1
                         remaining -= 1
-
-        # self.negative_ranges = []#有配额的负例区间
-        #
-        # # 第一个区间（文件开始→第一个正例）
-        # if self.posIndexList[0][0] >= self.span:
-        #     self.negative_ranges.append((0, self.posIndexList[0][0]))
-        #     self.quota.append(1) #有空间配额为1
-        # else:
-        #     self.quota.append(0) #无空间配额为0
-        #
-        # # 中间区间（正例之间）
-        # for i in range(1, len(self.posIndexList)):
-        #     prev_end = self.posIndexList[i - 1][1]
-        #     curr_start = self.posIndexList[i][0]
-        #     if curr_start - prev_end >= self.span:
-        #         self.negative_ranges.append((prev_end, curr_start))
-        #         self.quota.append(1)
-        #     else:
-        #         self.quota.append(0)
-        #
-        # # 最后区间（最后一个正例→文件结束）
-        # last_end = self.posIndexList[-1][1]
-        # if len(self.eegData[0]) - last_end >= self.span:
-        #     self.quota.append(1)
-        #     self.negative_ranges.append((last_end, len(self.eegData[0])))
-        # else:
-        #     self.quota.append(0)
-        #
-        #
-        # # 计算各区间权重（按可容纳样本数）
-        # self.range_weights = [((r[1] - r[0])//self.span) for r in self.negative_ranges]
-        # new_range_weights = [int(weight*0.75) for weight in self.range_weights] #权重取可容纳的3/4
-        # self.range_weights = new_range_weights
-        # self.total_negative_capacity = sum(self.range_weights)
-        # # 收集所有有效区间索引
-        # self.valid_indices = [i for i in range(len(self.quota)) if self.quota[i] == 1]
-        # if self.negative_num>self.total_negative_capacity:
-        #     print("负例池不足，正负比例过大")
-        #     return
-        # for i in range(len(self.quota)): #若可分配配额（值为1），就计算配额（不能超过该区间最多配额的75%）
-        #     j=0
-        #     if self.quota[i]==1:
-        #         self.quota[i]=int((self.range_weights[j]/self.total_negative_capacity)*self.negative_num)
-        #         j=j+1
-        #
-        # remaining = self.negative_num - sum(self.quota)
-        # if remaining > 0:
-        #     # 按权重降序排序
-        #     sorted_indices = sorted(self.valid_indices, key=lambda x: -self.range_weights[x])
-        #     for i in sorted_indices:
-        #         if remaining <= 0:
-        #             break
-        #         self.quota[i] += 1
-        #         remaining -= 1
-
-
-
-
-
-    # def compute_distance(self, sample1: np.ndarray, sample2: np.ndarray) -> float:
-    #     """计算两个样本之间的距离(使用欧氏距离)"""
-    #     return np.linalg.norm(sample1 - sample2)

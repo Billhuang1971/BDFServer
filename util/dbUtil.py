@@ -2102,7 +2102,7 @@ class dbUtil(MySqlService):
                 filter_info.append(i[0])
             return filter_info
 
-    def getFilterItemByTypeInfo2(self, source, type_name, maxSample=1, minSample=0, themeInfo=[],file_type=''):
+    def getFilterItemByTypeInfoeeg(self, source, type_name, maxSample=1, minSample=0, themeInfo=[],file_type=''):
         msg = {}
         if '诊断标注' in source:
             if msg.get('user') is not None:

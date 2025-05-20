@@ -6328,15 +6328,10 @@ class server(socketServer):
         try:
             theme_ids = [item[0] for item in REQmsg[4]]
             file_type=REQmsg[5]
-            result = self.dbUtil.getFilterItemByTypeInfo2(REQmsg[0], REQmsg[1], REQmsg[2], REQmsg[3], theme_ids,file_type)
-            # if result!=[]:
-            #     file=result['fileName']
-            #     for patient_name, files in file.items():
-            #         for file_info in files:
-            #             file_name, (check_id, file_id) = file_info
-            #             file_path=f"data/formated_data/{str(check_id).zfill(11)}/{str(file_id).zfill(3)}.bdf"
-
-
+            if file_type == 'EEG':
+                result = self.dbUtil.getFilterItemByTypeInfoeeg(REQmsg[0], REQmsg[1], REQmsg[2], REQmsg[3], theme_ids,file_type)
+            elif file_type == 'sEEG':
+                pass
             if len(result) == 0:
                 msgtip = [cmdID, f"构建集合获取选择的样本详细信息失败", '', '']
                 ret = ['0', cmdID, f"构建集合获取选择的样本详细信息失败", '数据库没有所选择类型的数据']

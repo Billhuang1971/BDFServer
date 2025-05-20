@@ -4,6 +4,7 @@ import numpy as np
 import mne
 from classifier.setBuild.runThread import runThread
 import gc
+from sklearn.preprocessing import StandardScaler
 
 
 class setBuildService:
@@ -266,10 +267,19 @@ class setBuildService:
                 gc.collect()
 
             self.eegLength = self.eegData.shape[1]
+            if self.scheme=='Cluster Select': #该方法要通道标准化
+                self.standard() #通道标准化
             print(f'eegData.shape: {self.eegData.shape}')
         except Exception as e:
             print('getEEGData', e)
+    def standard(self):#通道标准化
+        data_reshaped = self.eegData.T  # 转置后形状变为 (n_samples, n_channels)
+        # 初始化 StandardScaler，并拟合数据
+        scaler = StandardScaler()
+        data_scaled = scaler.fit_transform(data_reshaped)  # 标准化后的数据形状仍为 (n_samples, n_channels)
 
+        # 转置回原始形状 (n_channels, n_samples)
+        self.eegData = data_scaled.T
     def getPos(self): #获取正例
         print(f'getPos')
         self.curFilePosNum = 0
