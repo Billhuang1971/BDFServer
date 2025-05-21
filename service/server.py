@@ -6328,10 +6328,7 @@ class server(socketServer):
         try:
             theme_ids = [item[0] for item in REQmsg[4]]
             file_type=REQmsg[5]
-            if file_type == 'EEG':
-                result = self.dbUtil.getFilterItemByTypeInfoeeg(REQmsg[0], REQmsg[1], REQmsg[2], REQmsg[3], theme_ids,file_type)
-            elif file_type == 'sEEG':
-                pass
+            result = self.dbUtil.getFilterItemByTypeInfoeeg(REQmsg[0], REQmsg[1], REQmsg[2], REQmsg[3], theme_ids,file_type)
             if len(result) == 0:
                 msgtip = [cmdID, f"构建集合获取选择的样本详细信息失败", '', '']
                 ret = ['0', cmdID, f"构建集合获取选择的样本详细信息失败", '数据库没有所选择类型的数据']

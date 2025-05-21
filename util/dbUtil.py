@@ -2221,7 +2221,7 @@ class dbUtil(MySqlService):
 
         result = {}
         for key, sql in msg.items():
-            print(f'getFilterItemByTypeInfo2 sql: {sql}')
+            print(f'getFilterItemByTypeInfoeeg sql: {sql}')
             filter_info = self.myQuery(sql)
             print(f'key: {key}, attr: {filter_info}')
 
