@@ -251,7 +251,7 @@ class predictAlg(algObject):
             self.check_id = check_id
             self.uid = uid
             config_id = self.dbUtil.get_fileInfo(where_name='check_id', where_value=check_id,
-                                                 wherename='file_id', wherevalue=file_id)[1][0][2]
+                                                 wherename='file_id', wherevalue=file_id)[1][0][3]
             self.scan_file_channel_list = scan_file_channel_list
             self.time_stride = time_stride
             classifier_info = self.dbUtil.getclassifierInfo(where_name='classifier_id', where_value=self.classifier_id)[0]
@@ -290,9 +290,9 @@ class predictAlg(algObject):
         except Exception as e:
             print('predictAlg__init__:', e)
 
-    def match(self):
+    def match(self, n_times):
         try:
-            if self.model_train_sample_rate > self.sample_rate:
+            if self.model_train_sample_rate > n_times:
                 return False
             else:
                 return True

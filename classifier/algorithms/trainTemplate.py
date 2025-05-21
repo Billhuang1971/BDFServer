@@ -18,8 +18,10 @@ class trainTemplate(trainAlgorithm):
     def train(self):
         # -------------------------------------------------------------------------
         # 以下为父类 trainAlgorithm 中已经定义的变量，直接使用即可
-        # self.train_set    训练样本
-        # self.train_label  训练标签
+        # self.train_set            训练样本
+        # self.train_label          训练标签
+        # self.model                需要训练的模型
+        # self.train_performance    记录训练的准确率
         # -------------------------------------------------------------------------
 
         # -------------------------------------------------------------------------
@@ -27,7 +29,7 @@ class trainTemplate(trainAlgorithm):
 
         # 特征提取
         # 归一化处理
-        model = None    # 创建模型
+        self.model = EEGNet()    # 创建用户定义的模型将其替换
         # 设置优化器
         # 创建损失函数
         # -------------------------------------------------------------------------
@@ -36,15 +38,13 @@ class trainTemplate(trainAlgorithm):
         # 必要代码
         for epoch in range(self.epochs):
             # 模型训练 如：
-            # model.train()
-            # model(train_X)
+            # self.model.train()
+            # self.model(train_X)
 
-            accuracy = 0.9  # 计算实际的准确率将其替换
+            self.train_performance = 0.9  # 计算实际的准确率将其替换
             avg_loss = 0.2  # 计算实际的损失率将其替换
-            print("epoch{}：train_acc:{},loss:{}".format(epoch + 1, accuracy, avg_loss))
+            print("epoch{}：train_acc:{},loss:{}".format(epoch + 1, self.train_performance, avg_loss))
 
-        # 保存训练好的模型和准确率
-        self.save(model, accuracy)
         # -------------------------------------------------------------------------
 
 
@@ -63,9 +63,8 @@ class EEGNet(nn.Module):
 
 #####   上传前必须切换到该入口函数   ####
 # 上传到系统调用的入口函数
-def run_main():
+def run_main(args):
     print('start')
-    args = sys.argv[1:]
     a = trainTemplate(args[0], args[1])
     a.run()
     print('finish')
@@ -89,7 +88,8 @@ def dev_run():
 # 系统调用训练算法的入口函数
 if __name__ == '__main__':
     #####   上传前必须切换到该入口函数   ####
-    # run_main()
+    # args = sys.argv[1:]
+    # run_main(args)
 
     # 请在上传前切换入口函数
     dev_run()

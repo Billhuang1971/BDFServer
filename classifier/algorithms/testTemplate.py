@@ -9,8 +9,6 @@ from testAlg import testAlgorithm
 class testTemplate(testAlgorithm):
     def __init__(self, modelFileName, testingSetFileName):
         super().__init__(modelFileName, testingSetFileName)
-        # 加载模型
-        self.load()
         # 定义测试算法需要使用的参数
 
 
@@ -20,7 +18,8 @@ class testTemplate(testAlgorithm):
         # 以下为父类 testAlgorithm 中已经定义的变量，直接使用即可
         # self.test_set    测试样本
         # self.test_label  测试标签
-        # self.model_dict  加载好的模型
+        # self.model       加载好的模型
+        # self.test_performance 测试的准确率
         # -------------------------------------------------------------------------
 
         # -------------------------------------------------------------------------
@@ -53,9 +52,8 @@ class EEGNet(nn.Module):
 
 #####   上传前必须切换到该入口函数   ####
 # 上传到系统调用的入口函数
-def run_main():
+def run_main(args):
     print('start')
-    args = sys.argv[1:]
     a = testTemplate(args[0], args[1])
     a.run()
     print('finish')
@@ -80,7 +78,8 @@ def dev_run():
 # 系统调用训练算法的入口函数
 if __name__ == '__main__':
     #####   上传前必须切换到该入口函数   ####
-    # run_main()
+    # args = sys.argv[1:]
+    # run_main(args)
 
     # 请在上传前切换入口函数
     dev_run()

@@ -11,8 +11,6 @@ class predictTemplate(predictAlgorithm):
                  unitFactor, model_trained_sample_rate, alg_type, set_temp):
         super().__init__(modelFileName, eegFileName, time_stride, scan_file_channel_list, sample_rate, sample_len,
                  unitFactor, model_trained_sample_rate, alg_type, set_temp)
-        # 加载模型
-        self.load()
         # 定义预测算法需要使用的参数
 
 
@@ -53,9 +51,8 @@ class EEGNet(nn.Module):
 
 #####   上传前必须切换到该入口函数   ####
 # 上传到系统调用的入口函数
-def run_main():
+def run_main(args):
     print('start')
-    args = sys.argv[1:]
     a = predictTemplate(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9])
     a.run()
     print('finish')
@@ -94,7 +91,8 @@ def dev_run():
 # 系统调用训练算法的入口函数
 if __name__ == '__main__':
     #####   上传前必须切换到该入口函数   ####
-    # run_main()
+    # args = sys.argv[1:]
+    # run_main(args)
 
     # 请在上传前切换入口函数
     dev_run()

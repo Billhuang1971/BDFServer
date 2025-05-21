@@ -8,6 +8,7 @@ class AlgorithmTemplate(object):
     def __init__(self, modelFileName=None):
         self.modelFileName = modelFileName
         self.result = False
+        self.model = None
 
     # 实际使用需重写该方法
     def run(self):

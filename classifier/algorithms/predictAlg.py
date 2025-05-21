@@ -48,11 +48,6 @@ class predictAlgorithm(AlgorithmTemplate):
             self.import_model = True
         print("---- import_model", self.import_model)
 
-    def load_model(self, modelFile):
-        print("load_model function is called")
-        sys.stdout.flush()
-        raise Exception
-
     def load(self):
         self.model = torch.load(self.modelFileName, weights_only=False)
 
@@ -64,7 +59,7 @@ class predictAlgorithm(AlgorithmTemplate):
 
     def run(self):
         self.channels = self.get_channels_name()
-        self.load_model(self.modelFileName)
+        self.load()
         # 获取待扫描脑电文件中的通道名称数组
         if self.state_predict == 'state':
             self.start_state_predict()
