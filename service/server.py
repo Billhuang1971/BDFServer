@@ -2850,14 +2850,15 @@ class server(socketServer):
         try:
             account = REQmsg[3][0]
             theme_info = REQmsg[3][1:]
-            result = self.dbUtil.update_themeInfo(theme_info)
+            result, info = self.dbUtil.update_themeInfo(theme_info)
             if result:
                 msgtip = [account, f"修改标注主题信息成功", '', '']
                 ret = ['1', REQmsg[1], f"修改标注主题信息成功", theme_info]
                 return msgtip, ret
             else:
-                msgtip = [account, f"修改标注主题信息失败", '', '']
-                ret = ['0', REQmsg[1], f"修改标注主题信息失败", theme_info]
+                info = str(info)
+                msgtip = [account, info, '', '']
+                ret = ['0', REQmsg[1], info, theme_info]
                 return msgtip, ret
         except Exception as e:
             print('updateThemeInfo', e)

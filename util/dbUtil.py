@@ -660,20 +660,31 @@ class dbUtil(MySqlService):
             return False
         return True
 
-    # 跟新标注主题信息
+
+    # 25/06/04 更新标注主题信息，避免主题名称重复造成主键或唯一性冲突
     def update_themeInfo(self, theme_info):
         try:
             theme_name = theme_info[1]
-            # config_id = theme_info[2]
-            # theme_state = theme_info[2]
             theme_description = theme_info[2]
             theme_id = theme_info[3]
-            sql = f"update theme set name = '{theme_name}',description = '{theme_description}'  where theme_id ='{theme_id}' "
-            self.myExecuteSql(sql)
+
+            # 通过 myQueryOne 检查是否存在同名主题（排除当前 ID）
+            check_sql = "SELECT COUNT(*) FROM theme WHERE name = %s AND theme_id != %s"
+            count_result = self.myQueryOne(check_sql, (theme_name, theme_id))
+            if count_result and count_result[0] > 0:
+                flag = f"主题名称 '{theme_name}' 已存在，更新失败。"
+                # print(f"主题名称 '{theme_name}' 已存在，更新失败。")
+                return [False,flag]
+
+            # 更新主题信息
+            update_sql = "UPDATE theme SET name = %s, description = %s WHERE theme_id = %s"
+            self.myExecuteSqlNew(update_sql, (theme_name, theme_description, theme_id))
+
         except Exception as e:
-            print('update_themeInfo', e)
-            return False
-        return True
+            print("update_themeInfo", e)
+            return [False,str(e)]
+
+        return [True,None]
 
     # 获取病人id和名字
     def get_FileInfo1(self, where_name='', where_value='', flag='', start=None, offset=None, config_id=None):

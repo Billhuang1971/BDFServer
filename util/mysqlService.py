@@ -99,6 +99,26 @@ class MySqlService:
         except Exception as e:
             self.putConn(conn)
             return '0',f'{e}'
+
+    def myQueryOne(self, sql, params=None):
+        conn = None
+        try:
+            conn = self.getConn()
+            cursor = conn.cursor()
+            if params:
+                cursor.execute(sql, params)
+            else:
+                cursor.execute(sql)
+            result = cursor.fetchone()
+            cursor.close()
+            self.putConn(conn)
+            return result
+        except Exception as e:
+            print(f"myQueryOne: {e}")
+            if conn:
+                self.putConn(conn)
+            return None
+
     def myExecuteSql(self, parmSql):
         try:
             conn=self.getConn()
