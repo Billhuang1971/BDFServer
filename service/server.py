@@ -258,6 +258,10 @@ class server(socketServer):
             elif cmd =='researchImport' and cmdID == 14:
                 tipmsg, ret = self.insertSampleInfoBatch(REQmsg)
                 REQmsg[3] = ret
+            elif cmd =='researchImport' and cmdID == 15:
+                tipmsg, ret = self.getCheckNumberByID(REQmsg)
+                REQmsg[3] = ret
+
 
 
 
@@ -2682,6 +2686,24 @@ class server(socketServer):
                 return msgtip, ret
         except Exception as e:
             print("insertSampleInfoBatch 错误:", e)
+
+    def getCheckNumberByID(self,REQmsg):
+        try:
+            print("getCheckNumberByID,",REQmsg)
+            account = REQmsg[3][0]
+            check_id = REQmsg[3][1]
+            check_number = self.dbUtil.getCheckNumberbyID(where_name='check_id', where_value=check_id)
+            if check_number:
+                msgtip = [account, f'检索check_number成功', '', '']
+                ret = ['1', REQmsg[1], f'检索check_number成功', check_number]
+                return msgtip, ret
+            else:
+                msgtip = [account, f'检索check_number失败', '', '']
+                ret = ['0', REQmsg[1], f'检索check_number失败', check_number]
+                return msgtip, ret
+        except Exception as e:
+            print("getCheckNumberByID 错误",e)
+
 
 
     # 任务设置
