@@ -290,9 +290,9 @@ class predictAlg(algObject):
         except Exception as e:
             print('predictAlg__init__:', e)
 
-    def match(self, n_times):
+    def match(self):
         try:
-            if self.model_train_sample_rate > n_times:
+            if self.model_train_sample_rate > self.sample_rate:
                 return False
             else:
                 return True
