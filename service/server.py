@@ -1929,7 +1929,7 @@ class server(socketServer):
 
                     sampling_rate = int(user_config[0])
                     # 判断用户当前配置是否适合处理该脑电文件
-                    if (freq > sampling_rate):
+                    if (freq >= sampling_rate):
                         msgtip = [account, f"检查脑电文件配置成功", '', '']
                         ret = ['1', REQmsg[1], f"检查脑电文件配置成功", [user_config], filemsg]
                         return msgtip, ret
@@ -2350,7 +2350,7 @@ class server(socketServer):
 
                     sampling_rate = int(user_config[0])
                     # 判断用户当前配置是否适合处理该脑电文件
-                    if (freq > sampling_rate):
+                    if (freq >= sampling_rate):
                         msgtip = [account, f"检查脑电文件配置成功", '', '']
                         ret = ['1', REQmsg[1], f"检查脑电文件配置成功", [user_config], filemsg]
                         return msgtip, ret
