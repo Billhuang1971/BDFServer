@@ -8467,7 +8467,7 @@ class server(socketServer):
                 self.predict = predictAlg(dbUtil=self.dbUtil, classifier_id=classifier_id, file_id=file_id,
                                           check_id=check_id, scan_file_channel_list=scan_channels_info,
                                           time_stride=time_stride, uid=REQmsg[2], alg_name=alg_name, alg_id=alg_id)
-                result = self.predict.match(local_raw.n_times)
+                result = self.predict.match()
                 if result:
                     msgtip = [REQmsg[2], f"应答{REQmsg[0]}", '匹配操作成功', "", '']
                     ret = ['1', f"应答{REQmsg[0]}匹配操作成功", classifier_id]
