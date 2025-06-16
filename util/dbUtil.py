@@ -2371,9 +2371,9 @@ class dbUtil(MySqlService):
                     else:
                         value_list += " and c.account = '{}'".format(search_value[j][0])
                 if j != len(search_col) - 1:
-                    left_join_centence += 'left join user_info as c on a.cUid = c.uid '
+                    left_join_centence += 'left join user_info as c on si.uid = c.uid '
                 else:
-                    left_join_centence += 'left join user_info as c on a.cUid = c.uid'
+                    left_join_centence += 'left join user_info as c on si.uid = c.uid'
 
                 # sql += left_join_centence
                 j += 1
