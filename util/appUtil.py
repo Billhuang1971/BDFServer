@@ -411,7 +411,7 @@ class appUtil():
         :return: 生成的文件名和新文件ID。
         """
         # 查询 file_info 表获取所有 file_id
-        rp, file_list , check_id = self.dbUtil.get_fileInfoByCheckNumber(check_number)
+        rp, file_list, check_id, type = self.dbUtil.get_fileInfoByCheckNumber(check_number)
 
         # 如果 file_list 不为空，取最大 file_id，否则从1开始
         max_file_id = max((int(f[1]) for f in file_list), default=0)
@@ -419,7 +419,7 @@ class appUtil():
 
         # 格式化文件名
         filename = f"{str(check_id).rjust(11, '0')}_{str(new_file_id).rjust(3, '0')}"
-        return filename, new_file_id ,check_id
+        return filename, new_file_id, check_id, type
 
     # 整合laod_dataDynamical中打开文件、读文件关闭文件
     # def readEEG(self, check_id, file_id, _t_min, _t_max):

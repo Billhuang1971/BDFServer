@@ -330,8 +330,10 @@ class dbUtil(MySqlService):
             patient_id = check_info[1]
             description = check_info[2]
             pUid = check_info[3]
-            measure_date = check_info[4]
-            cUid = check_info[5]
+            cUid = check_info[4]
+            measure_date = check_info[5]
+            mark_type = check_info[6]
+            mac = check_info[7]
             state = 'notUploaded'
 
             # 先检查检查单号是否存在
@@ -342,7 +344,7 @@ class dbUtil(MySqlService):
                 return ['0', f"添加失败，检查单号重复！！"]
 
             # cUid可以传'NULL'，在这里写语句时不加‘’，传入就是NULL
-            sql = f"INSERT INTO `check_info`(check_number, patient_id, description, pUid, measure_date, state, cUid) VALUES ('{check_num}', '{patient_id}', '{description}', '{pUid}', '{measure_date}', '{state}', {cUid})"
+            sql = f"INSERT INTO `check_info`(check_number, patient_id, description, pUid, measure_date, state, cUid, type, mac) VALUES ('{check_num}', '{patient_id}', '{description}', '{pUid}', '{measure_date}', '{state}', {cUid}, '{mark_type}', '{mac}')"
             flag = self.myExecuteSql(sql)
 
             if flag == "":
@@ -427,13 +429,15 @@ class dbUtil(MySqlService):
         try:
             # 如果提供了 check_number，先查询 check_id
             if check_number:
-                sql_check_info = f"SELECT check_id FROM check_info WHERE check_number = '{check_number}'"
+                sql_check_info = f"SELECT check_id,type FROM check_info WHERE check_number = '{check_number}'"
                 check_info = self.myQuery(sql_check_info)
                 if not check_info:
                     return '0', None, None
                 check_id = check_info[0][0]  # 提取 check_id
+                type = check_info[0][1]
             else:
                 check_id = None
+                type = None
 
             # 构造查询 file_info 的 SQL
             if check_id:
@@ -447,10 +451,10 @@ class dbUtil(MySqlService):
 
             # 查询 file_info 表
             file_info = self.myQuery(sql)
-            return '1', file_info, check_id
+            return '1', file_info, check_id, type
         except Exception as e:
             print('get_fileInfo_by_checkNumber', e)
-            return '0', None, None
+            return '0', None, None, None
 
     # 向数据库中脑电数据表增加记录
     def add_fileInfo(self, filemsg):

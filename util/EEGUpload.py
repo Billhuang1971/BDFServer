@@ -18,13 +18,13 @@ class EEGUpload(object):
         try:
             check_number = REQmsg[3][2]
             self.filename_mutex.acquire()
-            filename, file_id, check_id = self.appUtil.makeFilePath(check_number)
+            filename, file_id, check_id, type = self.appUtil.makeFilePath(check_number)
             self.filename_mutex.release()
         except Exception as e:
             print("makeFileName:", e)
         if filename:
             msgtip = [account, f'脑电文件名生成成功', '', '']
-            ret = ['1', REQmsg[1], f'脑电文件名生成成功', [filename, file_id, check_id]]
+            ret = ['1', REQmsg[1], f'脑电文件名生成成功', [filename, file_id, check_id, type]]
             return msgtip, ret
         else:
             msgtip = [account, f'脑电文件名生成失败', '', '']
