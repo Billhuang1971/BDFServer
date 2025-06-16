@@ -161,17 +161,64 @@ class dbUtil(MySqlService):
 
     # 脑电导入模块
     # 获取病人诊断信息
-    def get_patientCheckInfo(self, where_value=''):
+    def get_patientCheckInfo(self, uid='', mac=''):
+        if not uid or not mac:
+            return '0', []
 
-        if where_value != '':
-            sql = f"SELECT check_id, patient_id, c.pUid, c.cUid, p.name as pname, check_number, c.measure_date,c.description, u.name as pdoctorname, m.name as cdoctorname, state FROM check_info as c NATURAL JOIN patient_info as p LEFT OUTER JOIN user_info as u on (c.pUid = u.uid) LEFT OUTER JOIN user_info as m on (c.cUid = m.uid) WHERE c.state in ('notUploaded', 'uploading') and c.cUid={where_value} order by  patient_id asc"
-        # sql = "select patient_id, check_number, measure_date, pUid, cUid from check_info"
+        try:
+            uid_int = int(uid)  # 确保是整数
+            mac_str = f"'{mac}'"  # 手动加引号，模拟 escape 结果
+        except Exception as e:
+            print("参数格式非法:", e)
+            return '0', []
+
+        sql = f"""
+            SELECT
+                check_id, patient_id, c.pUid, c.cUid,
+                p.name AS pname, check_number, c.measure_date, c.description,
+                u.name AS pdoctorname, m.name AS cdoctorname, state
+            FROM check_info AS c
+            NATURAL JOIN patient_info AS p
+            LEFT JOIN user_info AS u ON c.pUid = u.uid
+            LEFT JOIN user_info AS m ON c.cUid = m.uid
+            WHERE c.state IN ('notUploaded', 'uploading')
+              AND c.cUid = {uid_int}
+              AND c.mac = {mac_str}
+            ORDER BY patient_id ASC
+        """
+
         try:
             patientCheck_info = self.myQuery(sql)
+            return '1', patientCheck_info
         except Exception as e:
-            print("get_patientCheckInfo", e)
+            print("get_patientCheckInfo:", e)
             return '0', None
-        return '1', patientCheck_info
+
+    # def get_patientCheckInfo(self, uid='', mac=''):
+    #
+    #     if uid != '' and mac != '':
+    #         # sql = f"SELECT check_id, patient_id, c.pUid, c.cUid, p.name as pname, check_number, c.measure_date,c.description, u.name as pdoctorname, m.name as cdoctorname, state FROM check_info as c NATURAL JOIN patient_info as p LEFT OUTER JOIN user_info as u on (c.pUid = u.uid) LEFT OUTER JOIN user_info as m on (c.cUid = m.uid) WHERE c.state in ('notUploaded', 'uploading') and c.cUid={where_value} order by  patient_id asc"
+    #     # sql = "select patient_id, check_number, measure_date, pUid, cUid from check_info"
+    #         sql = """
+    #                     SELECT
+    #                         check_id, patient_id, c.pUid, c.cUid,
+    #                         p.name AS pname, check_number, c.measure_date, c.description,
+    #                         u.name AS pdoctorname, m.name AS cdoctorname, state
+    #                     FROM check_info AS c
+    #                     NATURAL JOIN patient_info AS p
+    #                     LEFT OUTER JOIN user_info AS u ON c.pUid = u.uid
+    #                     LEFT OUTER JOIN user_info AS m ON c.cUid = m.uid
+    #                     WHERE c.state IN ('notUploaded', 'uploading')
+    #                       AND c.cUid = %(uid)s
+    #                       AND m.mac = %(mac)s
+    #                     ORDER BY patient_id ASC
+    #                 """
+    #     try:
+    #         patientCheck_info = self.myQuery(sql)
+    #     except Exception as e:
+    #         print("get_patientCheckInfo", e)
+    #         return '0', None
+    #     return '1', patientCheck_info
 
     # 获取病人id和名字
     def get_patientIdName(self, where_name='', where_value='', flag='', start=None, offset=None):

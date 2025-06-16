@@ -1810,8 +1810,8 @@ class server(socketServer):
             print('getPatientCheckInfo')
             account = REQmsg[3][0]
             uid = REQmsg[3][1]
-            value = REQmsg[3][2]
-            rpc, patientCheck_info = self.dbUtil.get_patientCheckInfo(uid)
+            mac = REQmsg[3][2]
+            rpc, patientCheck_info = self.dbUtil.get_patientCheckInfo(uid,mac)
             rf, file_info = self.dbUtil.get_fileInfo_detail(uid)
             if (rpc or rf) == '0':
                 print("patientCheck_info:", patientCheck_info)
