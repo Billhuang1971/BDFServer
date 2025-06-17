@@ -2322,6 +2322,12 @@ class dbUtil(MySqlService):
                       AND (uid, type_id) IN ({flt_placeholders})
                       AND (end - begin) BETWEEN %s AND %s
                     """
+                params = (
+                    check_id, file_id,  # (b.check_id, b.file_id)
+                    *tempChannels,  # channel IN
+                    *sum(flt_list, ()),  # (a.uid, type_id) IN 展开
+                    minSample, sample  # (end - begin) BETWEEN
+                )
                 # channels_str = ', '.join(f"'{channel}'" for channel in tempChannels)
                 # flt_list_str = ', '.join(f"({uid}, {type_id})" for uid, type_id in flt_list)
                 # sql = f"""
@@ -2341,14 +2347,24 @@ class dbUtil(MySqlService):
                 channels_placeholders = ', '.join(['%s'] * len(tempChannels))
                 flt_placeholders = ', '.join(['(%s, %s)'] * len(flt_list))
                 sql = f"""
-                    SELECT begin, end, channel, type_id
+                    SELECT DISTINCT begin, end, channel, type_id
                     FROM reslab AS a
                     LEFT JOIN task AS b ON a.theme_id = b.theme_id
-                    WHERE (b.check_id, b.file_id) = ({check_file_placeholders})
+                      AND (b.check_id, b.file_id) = ({check_file_placeholders})
                       AND channel IN ({channels_placeholders})
+                    WHERE  a.check_id= %s
                       AND (a.uid, type_id) IN ({flt_placeholders})
                       AND (end - begin) BETWEEN %s AND %s
                     """
+                # sql = f"""
+                #     SELECT begin, end, channel, type_id
+                #     FROM reslab AS a
+                #     LEFT JOIN task AS b ON a.theme_id = b.theme_id
+                #     WHERE (b.check_id, b.file_id) = ({check_file_placeholders})
+                #       AND channel IN ({channels_placeholders})
+                #       AND (a.uid, type_id) IN ({flt_placeholders})
+                #       AND (end - begin) BETWEEN %s AND %s
+                #     """
                 # channels_str = ', '.join(f"'{channel}'" for channel in tempChannels)
                 # flt_list_str = ', '.join(f"({uid}, {type_id})" for uid, type_id in flt_list)
                 # sql = f"""
@@ -2359,12 +2375,13 @@ class dbUtil(MySqlService):
                 #   AND (a.uid, type_id) IN ({flt_list_str})
                 #   AND (end - begin) BETWEEN {minSample} AND {sample}
                 # """
-            params = (
-                check_id, file_id,  # (b.check_id, b.file_id)
-                *tempChannels,  # channel IN
-                *sum(flt_list, ()),  # (a.uid, type_id) IN 展开
-                minSample, sample  # (end - begin) BETWEEN
-            )
+                params = (
+                    check_id, file_id,  # (b.check_id, b.file_id)
+                    *tempChannels,  # channel IN
+                    check_id,  #a.check_id
+                    *sum(flt_list, ()),  # (a.uid, type_id) IN 展开
+                    minSample, sample  # (end - begin) BETWEEN
+                )
             setInfo = self.myExecuteSqlWithParm(sql, params)
             print(f'getPosIndexList sql: {sql}')
             # setInfo = self.myQuery(sql)
