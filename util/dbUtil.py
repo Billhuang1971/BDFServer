@@ -2058,10 +2058,6 @@ class dbUtil(MySqlService):
         user_info = self.myQuery(sql)
         return user_info
 
-    def getCheckNumberbyID(self, where_name='', where_value=''):
-        sql = f"select check_number from check_info where {where_name} ='{where_value}' "
-        check_number = self.myQuery(sql)
-        return check_number
 
     def getStudentInfobyPage(self, where_value='', offset='', psize='', where_name='', where_like=''):
         if where_name != '':

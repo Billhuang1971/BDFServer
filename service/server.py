@@ -258,9 +258,6 @@ class server(socketServer):
             elif cmd =='researchImport' and cmdID == 14:
                 tipmsg, ret = self.insertSampleInfoBatch(REQmsg)
                 REQmsg[3] = ret
-            elif cmd =='researchImport' and cmdID == 15:
-                tipmsg, ret = self.getCheckNumberByID(REQmsg)
-                REQmsg[3] = ret
 
 
 
@@ -2231,8 +2228,8 @@ class server(socketServer):
             print('getPatientCheckInfo1')
             account = REQmsg[3][0]
             uid = REQmsg[3][1]
-            value = REQmsg[3][2]
-            rpc, patientCheck_info = self.dbUtil.get_patientCheckInfo(uid)
+            mac = REQmsg[3][2]
+            rpc, patientCheck_info = self.dbUtil.get_patientCheckInfo(uid, mac)
             rf, file_info = self.dbUtil.get_fileInfo_detail(uid)
             if (rpc or rf) == '0':
                 print("patientCheck_info:", patientCheck_info)
@@ -2673,36 +2670,20 @@ class server(socketServer):
     def insertSampleInfoBatch(self, REQmsg):
         try:
             account = REQmsg[2]
-            sample_info = REQmsg[3]  # 取出样本信息列表
+            target_index = REQmsg[3][0]
+            sample_info = REQmsg[3][1:]  # 取出样本信息列表
             print("sample_info 准备插入：", sample_info)
             result = self.dbUtil.insert_sampleInfo_batch(sample_info)
             if result:
                 msgtip = [account, f'批量添加样本信息成功', '', '']
-                ret = ['1', REQmsg[1], f'批量添加样本信息成功', sample_info]
+                ret = ['1', REQmsg[1], f'批量添加样本信息成功', sample_info, target_index]
                 return msgtip, ret
             else:
                 msgtip = [account, f'批量添加样本信息失败', '', '']
-                ret = ['0', REQmsg[1], f'批量添加样本信息失败', sample_info]
+                ret = ['0', REQmsg[1], f'批量添加样本信息失败', sample_info,target_index]
                 return msgtip, ret
         except Exception as e:
             print("insertSampleInfoBatch 错误:", e)
-
-    def getCheckNumberByID(self,REQmsg):
-        try:
-            print("getCheckNumberByID,",REQmsg)
-            account = REQmsg[3][0]
-            check_id = REQmsg[3][1]
-            check_number = self.dbUtil.getCheckNumberbyID(where_name='check_id', where_value=check_id)
-            if check_number:
-                msgtip = [account, f'检索check_number成功', '', '']
-                ret = ['1', REQmsg[1], f'检索check_number成功', check_number]
-                return msgtip, ret
-            else:
-                msgtip = [account, f'检索check_number失败', '', '']
-                ret = ['0', REQmsg[1], f'检索check_number失败', check_number]
-                return msgtip, ret
-        except Exception as e:
-            print("getCheckNumberByID 错误",e)
 
 
 
