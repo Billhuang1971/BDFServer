@@ -2239,7 +2239,7 @@ class dbUtil(MySqlService):
             msg['patientName'] += f"select distinct a.patient_id, a.name from patient_info as a " \
                                   f"Join check_info AS ci ON a.patient_id = ci.patient_id " \
                                   f"left join task as t on t.check_id = ci.check_id " \
-                                  f"Join reslab as b on t.theme_id = b.theme_id " \
+                                  f"Join reslab as b on t.theme_id = b.theme_id  AND t.check_id = b.check_id " \
                                   f"left join type_info as c on b.type_id = c.type_id " \
                                   f"LEFT JOIN file_info AS e ON b.check_id = e.check_id " \
                                   f"where (b.end - b.begin) >= {minSample} and (b.end - b.begin) <= {maxSample} " \
